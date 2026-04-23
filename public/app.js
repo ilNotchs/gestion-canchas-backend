@@ -1,16 +1,24 @@
 // === 1. Lógica para cambiar entre módulos ===
 function mostrarModulo(moduloId) {
+    // Ocultar todos los módulos
     document.getElementById('modulo-reservar').style.display = 'none';
     document.getElementById('modulo-inventario').style.display = 'none';
+    
+    // Quitar clase activa de los botones del menú
     document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
     
+    // Mostrar el módulo seleccionado
     document.getElementById(`modulo-${moduloId}`).style.display = 'block';
     
+    // Marcar botón como activo si el evento existe
     if (event && event.target && event.target.classList.contains('menu-btn')) {
         event.target.classList.add('active');
     }
     
-    if (moduloId === 'inventario') cargarInventario();
+    // Si entramos a inventario, cargamos los datos automáticamente
+    if (moduloId === 'inventario') {
+        cargarInventario();
+    }
 }
 
 // === 2. Lógica para calcular total y automatizar implementos ===
@@ -22,7 +30,7 @@ function calcularTotal() {
     const tipo = selectCancha.value; 
     const precio = selectedOption.getAttribute('data-precio');
     
-    // Automatización básica
+    // Automatización de implementos según la cancha
     if (tipo.includes('11v11')) {
         document.getElementById('petos_rojos').value = 11;
         document.getElementById('petos_azules').value = 11;
@@ -33,15 +41,24 @@ function calcularTotal() {
         document.getElementById('balones').value = 1;
     }
 
-    const precioFormateado = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(precio);
+    // Formatear precio a moneda colombiana
+    const precioFormateado = new Intl.NumberFormat('es-CO', { 
+        style: 'currency', 
+        currency: 'COP', 
+        maximumFractionDigits: 0 
+    }).format(precio);
+    
     document.getElementById('total-precio').innerText = precioFormateado;
 }
 
+// Inicializar el cálculo al cargar la página
 window.onload = () => {
-    if(document.getElementById('tipo-cancha')) calcularTotal();
+    if (document.getElementById('tipo-cancha')) {
+        calcularTotal();
+    }
 };
 
-// === 3. Lógica para Enviar la Reserva (URL RELATIVA) ===
+// === 3. Enviar Reserva al Backend (RUTAS RELATIVAS) ===
 const formReserva = document.getElementById('form-reserva');
 if (formReserva) {
     formReserva.addEventListener('submit', async (e) => {
@@ -70,30 +87,30 @@ if (formReserva) {
             const resultado = await respuesta.json();
 
             if (respuesta.ok) {
-                alert('✅ ¡Reserva realizada!\n' + resultado.mensaje);
+                alert('✅ ¡Reserva exitosa!\n' + resultado.mensaje);
                 formReserva.reset(); 
                 calcularTotal(); 
             } else {
-                alert('❌ Error: ' + resultado.mensaje);
+                alert('❌ No se pudo reservar: ' + resultado.mensaje);
             }
         } catch (error) {
-            alert('❌ Error de conexión con el servidor.');
+            alert('❌ Error: El servidor no responde.');
         }
     });
 }
 
-// === 4. Cargar Inventario (URL RELATIVA + ANTI-CACHÉ) ===
+// === 4. Cargar Inventario y Canchas (RUTAS RELATIVAS) ===
 async function cargarInventario() {
     const contenedorInv = document.getElementById('lista-inventario');
     const contenedorCanchas = document.getElementById('lista-canchas');
 
-    if(!contenedorInv || !contenedorCanchas) return;
+    if (!contenedorInv || !contenedorCanchas) return;
 
-    contenedorInv.innerHTML = 'Cargando artículos...';
-    contenedorCanchas.innerHTML = 'Cargando canchas...';
+    contenedorInv.innerHTML = '<p>Cargando artículos...</p>';
+    contenedorCanchas.innerHTML = '<p>Cargando canchas...</p>';
 
     try {
-        // FETCH RELATIVO: Funciona en local y en Render
+        // Ejecutamos todas las peticiones al tiempo para más velocidad
         const [resInv, resCan, resRes] = await Promise.all([
             fetch('/api/inventario', { cache: 'no-store' }),
             fetch('/api/canchas', { cache: 'no-store' }),
@@ -102,31 +119,41 @@ async function cargarInventario() {
 
         const datosInv = await resInv.json();
         const canchas = await resCan.json();
-        const reservas = await resRes.json();
+        const reservasActivas = await resRes.json();
 
-        // Render Inventario
+        // --- Renderizar Inventario ---
         contenedorInv.innerHTML = ''; 
         datosInv.forEach(item => {
+            const colorInfo = item.color ? `(${item.color})` : '';
             contenedorInv.innerHTML += `
                 <div class="tarjeta-inv">
-                    <h4>${item.articulo} ${item.color ? `(${item.color})` : ''}</h4>
-                    <h3 style="color: #008080;">${item.cantidad_disponible} disp.</h3>
-                    <p style="font-size: 12px; color: gray;">De ${item.cantidad_total} totales</p>
+                    <h4>${item.articulo} ${colorInfo}</h4>
+                    <h3 style="color: #008080;">${item.cantidad_disponible} disponibles</h3>
+                    <p style="font-size: 12px; color: gray;">De ${item.cantidad_total} en total</p>
                 </div>
             `;
         });
 
-        // Render Canchas
+        // --- Renderizar Canchas ---
         contenedorCanchas.innerHTML = ''; 
         canchas.forEach(cancha => {
-            const r = reservas.find(res => res.cancha_id === cancha.id);
-            let htmlEstado = r 
-                ? `<div style="background:#ffe6e6; padding:10px; border-radius:5px; margin-top:10px;">
-                    <p><strong>Ocupada:</strong> ${r.nombre_cliente}</p>
-                    <p style="font-size:12px;">⏰ ${r.hora_inicio}</p>
-                    <button onclick="cancelarReserva(${r.id})" style="background:#dc3545; color:white; border:none; padding:5px; width:100%; cursor:pointer; margin-top:5px; border-radius:4px;">Cancelar</button>
-                   </div>`
-                : `<p style="color:#28a745; font-weight:bold; margin-top:15px;">✅ Disponible</p>`;
+            const r = reservasActivas.find(res => res.cancha_id === cancha.id);
+            
+            let htmlEstado = '';
+            if (r) {
+                const fechaLimpia = r.fecha_reserva.split('T')[0];
+                htmlEstado = `
+                    <div style="background-color: #ffe6e6; padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 4px solid #dc3545;">
+                        <p><strong>Ocupada por:</strong> ${r.nombre_cliente}</p>
+                        <p style="font-size: 13px;">⏰ ${r.hora_inicio} | 📅 ${fechaLimpia}</p>
+                        <button onclick="cancelarReserva(${r.id})" style="background: #dc3545; color: white; border: none; padding: 8px; width: 100%; cursor: pointer; border-radius: 4px; margin-top: 8px; font-weight: bold;">
+                            ❌ Cancelar Reserva
+                        </button>
+                    </div>
+                `;
+            } else {
+                htmlEstado = `<p style="color: #28a745; font-weight: bold; margin-top: 15px;">✅ Disponible</p>`;
+            }
 
             contenedorCanchas.innerHTML += `
                 <div class="tarjeta-inv" style="border: 1px solid #ddd;">
@@ -136,16 +163,31 @@ async function cargarInventario() {
                 </div>
             `;
         });
+
     } catch (error) {
-        contenedorInv.innerHTML = '<p style="color:red;">Error al conectar.</p>';
+        console.error("Error al cargar datos:", error);
+        contenedorInv.innerHTML = '<p style="color:red;">Error al conectar con la base de datos.</p>';
+        contenedorCanchas.innerHTML = '<p style="color:red;">Error al conectar con la base de datos.</p>';
     }
 }
 
 // === 5. Cancelar Reserva ===
 async function cancelarReserva(reservaId) {
-    if (!confirm("¿Seguro que quieres cancelar?")) return;
+    if (!confirm("¿Seguro que quieres cancelar esta reserva y devolver los artículos al inventario?")) return;
+
     try {
-        const res = await fetch(`/api/reservas/${reservaId}/cancelar`, { method: 'PUT' });
-        if (res.ok) cargarInventario();
-    } catch (e) { alert("Error de red"); }
+        const respuesta = await fetch(`/api/reservas/${reservaId}/cancelar`, { 
+            method: 'PUT' 
+        });
+        
+        if (respuesta.ok) {
+            alert('✅ Reserva cancelada con éxito.');
+            cargarInventario(); 
+        } else {
+            const err = await respuesta.json();
+            alert('❌ No se pudo cancelar: ' + err.mensaje);
+        }
+    } catch (error) {
+        alert('❌ Error de conexión.');
+    }
 }
