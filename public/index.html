@@ -3,121 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FitCanchas - Premium Booking</title>
+    <title>FitCanchas - Premium Management System</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
+    <div id="login-overlay">
+        <div id="login-container">
+            <div class="login-marketing">
+                <div class="login-marketing-overlay"></div>
+                <div class="login-marketing-content">
+                    <h1>Reserva tu cancha y juega sin límites</h1>
+                    <div class="marketing-items">
+                        <div class="m-item"><i class="fas fa-bolt"></i> <span>Reservas al instante</span></div>
+                        <div class="m-item"><i class="fas fa-shield-heart"></i> <span>Gestión de implementos pro</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="login-form-area">
+                <div class="login-header">
+                    <h2>ACCESO AL SISTEMA</h2>
+                </div>
+                <form id="form-login">
+                    <div class="input-login-group">
+                        <i class="fas fa-user-circle"></i>
+                        <input type="text" id="user" placeholder="Usuario" required>
+                    </div>
+                    <div class="input-login-group">
+                        <i class="fas fa-key"></i>
+                        <input type="password" id="pass" placeholder="Contraseña" required>
+                    </div>
+                    <button type="submit" class="btn-entrar">Entrar a FitCanchas</button>
+                    <p id="error-login">❌ Credenciales incorrectas</p>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="sidebar">
         <div class="sidebar-header">
             <h1 class="logo-texto">FIT<span>CANCHAS</span></h1>
         </div>
-        <div id="menu-opciones">
-            <button class="menu-btn" onclick="mostrarModulo('dashboard')"><i class="fas fa-chart-line"></i> <span>Dashboard</span></button>
-            <button class="menu-btn" onclick="mostrarModulo('reservar')"><i class="fas fa-calendar-plus"></i> <span>Reservar</span></button>
-            <button class="menu-btn" onclick="mostrarModulo('inventario')"><i class="fas fa-boxes"></i> <span>Inventario</span></button>
-        </div>
-        <button onclick="cerrarSesion()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Salir</span></button>
+        <nav id="menu-opciones">
+            <button class="menu-btn" onclick="mostrarModulo('reservar')">
+                <i class="fas fa-calendar-plus"></i> <span>Reservar</span>
+            </button>
+            <button class="menu-btn" onclick="mostrarModulo('dashboard')">
+                <i class="fas fa-chart-line"></i> <span>Dashboard</span>
+            </button>
+            <button class="menu-btn" onclick="mostrarModulo('inventario')">
+                <i class="fas fa-boxes"></i> <span>Inventario</span>
+            </button>
+        </nav>
+        <button onclick="cerrarSesion()" class="btn-logout">
+            <i class="fas fa-power-off"></i> <span>Cerrar Sesión</span>
+        </button>
     </div>
 
-    <div class="main-content">
+    <main class="main-content">
         
-        <div id="modulo-dashboard" class="modulo">
+        <section id="modulo-reservar" class="modulo">
             <div class="header-modulo">
-                <h2><i class="fas fa-chart-pie"></i> Dashboard</h2>
-                <p>Resumen de la operación hoy.</p>
+                <h2>Nueva Reserva</h2>
+                <p>Configura la cancha y los implementos necesarios.</p>
             </div>
-            <div class="grid-dashboard">
-                <div class="tarjeta-stat">
-                    <i class="fas fa-money-bill-wave" style="color: #22c55e; font-size: 1.5em;"></i>
-                    <h3>Ingresos Estimados</h3>
-                    <h2 id="stat-ingresos">$0</h2>
-                </div>
-                <div class="tarjeta-stat">
-                    <h3>Ocupación</h3>
-                    <h2 id="stat-ocupacion">0%</h2>
-                    <div class="barra-progreso"><div id="barra-ocupacion" class="progreso"></div></div>
-                </div>
-                <div class="tarjeta-stat" id="tarjeta-alerta-balones">
-                    <h3>Balones Disponibles</h3>
-                    <h2 id="stat-balones">0</h2>
-                </div>
-            </div>
-        </div>
 
-        <div id="modulo-reservar" class="modulo">
-            <div class="header-modulo">
-                <h2><i class="fas fa-calendar-check"></i> Nueva Reserva</h2>
-                <p>Completa los datos para asegurar la cancha.</p>
-            </div>
             <form id="form-reserva" class="form-premium">
-                <div class="input-group">
+                <div class="input-block">
                     <label>Nombre del Cliente</label>
                     <input type="text" id="nombre" placeholder="Nombre completo" required>
                 </div>
+
                 <div class="fila-form">
-                    <div class="input-group">
-                        <label>Cancha y Promoción</label>
+                    <div class="input-block">
+                        <label>Selecciona Cancha o Promoción</label>
                         <select id="tipo-cancha" onchange="calcularTotal()">
-                            <option value="11v11" data-precio="100000">Cancha Completa (11v11) - $100.000</option>
-                            <option value="11v11_promo" data-precio="110000">⭐ PROMO 11v11 (+24 Aguas) - $110.000</option>
-                            <option value="7v7" data-precio="60000">Cancha Fútbol 7 (7v7) - $60.000</option>
-                            <option value="7v7_promo" data-precio="70000">⭐ PROMO 7v7 (+14 Aguas) - $70.000</option>
+                            <option value="11v11" data-precio="100000">Cancha 11 (11v11) - $100.000</option>
+                            <option value="11v11_promo" data-precio="110000">⭐ PROMO 11 (+24 Aguas) - $110.000</option>
+                            <option value="7v7" data-precio="60000">Sintética (7v7) - $60.000</option>
+                            <option value="7v7_promo" data-precio="70000">⭐ PROMO 7 (+14 Aguas) - $70.000</option>
                         </select>
                     </div>
-                    <div class="input-group">
+                    <div class="input-block">
                         <label>Fecha</label>
                         <input type="date" id="fecha" required>
                     </div>
-                    <div class="input-group">
-                        <label>Hora</label>
+                    <div class="input-block">
+                        <label>Horario</label>
                         <select id="hora" required>
-                            <option value="18:00:00">06:00 PM</option><option value="19:00:00">07:00 PM</option>
-                            <option value="20:00:00">08:00 PM</option><option value="21:00:00">09:00 PM</option>
+                            <option value="18:00:00">06:00 PM</option>
+                            <option value="19:00:00">07:00 PM</option>
+                            <option value="20:00:00">08:00 PM</option>
+                            <option value="21:00:00">09:00 PM</option>
                         </select>
                     </div>
                 </div>
-                <div class="seccion-implementos">
-                    <div class="fila-form">
-                        <div class="input-group">
-                            <label>Balones</label><input type="number" id="balones" value="1" min="0">
-                        </div>
-                        <div class="input-group">
-                            <label>Petos Rojos</label><input type="number" id="petos_rojos" value="11" min="0">
-                        </div>
-                        <div class="input-group">
-                            <label>Petos Azules</label><input type="number" id="petos_azules" value="11" min="0">
-                        </div>
-                    </div>
+
+                <h3>Implementos Requeridos</h3>
+                <div class="fila-form">
+                    <div class="input-block"><label>Balones</label><input type="number" id="balones" value="1" min="0"></div>
+                    <div class="input-block"><label>Petos Rojos</label><input type="number" id="petos_rojos" value="11" min="0"></div>
+                    <div class="input-block"><label>Petos Azules</label><input type="number" id="petos_azules" value="11" min="0"></div>
                 </div>
+
                 <div class="facturacion-box" id="recibo-imprimible">
-                    <div id="logo-recibo" style="display:none; text-align:center;"><h2>FIT CANCHAS</h2><hr></div>
+                    <div id="pdf-header" style="display:none;">
+                        <h1 style="text-align:center; color:#004d4d;">COMPROBANTE FIT CANCHAS</h1>
+                        <hr style="border: 1px dashed #ccc; margin: 20px 0;">
+                    </div>
+                    
                     <div class="resumen-pago">
                         <div class="total-label">Total a Pagar</div>
                         <div id="factura-total" class="total-monto">$0</div>
                     </div>
-                    <div class="acciones-form">
-                        <button type="button" onclick="descargarPDF()" class="btn-pdf-minimal"><i class="fas fa-file-pdf"></i> PDF</button>
-                        <button type="submit" class="btn-confirmar-pro">Confirmar Reserva</button>
+
+                    <div class="acciones-finales">
+                        <button type="button" onclick="descargarPDF()" class="btn-pdf-pro">
+                            <i class="fas fa-file-pdf"></i> Generar PDF
+                        </button>
+                        <button type="submit" class="btn-reservar-pro">
+                            Confirmar Reserva
+                        </button>
                     </div>
                 </div>
             </form>
-        </div>
+        </section>
 
-        <div id="modulo-inventario" class="modulo">
+        <section id="modulo-dashboard" class="modulo" style="display:none;">
             <div class="header-modulo">
-                <h2><i class="fas fa-boxes"></i> Inventario e Instalaciones</h2>
-                <p>Monitoreo de equipos y disponibilidad de canchas.</p>
+                <h2>Signos Vitales</h2>
+                <p>Estadísticas en tiempo real de ingresos y ocupación.</p>
             </div>
-            <h3 style="color:#004d4d; margin-top:20px;">📦 Equipos</h3>
-            <div id="lista-inventario" class="grid-inventario"></div>
-            <h3 style="color:#004d4d; margin-top:40px;">⚽ Estado de Canchas</h3>
-            <div id="lista-canchas" class="grid-inventario"></div>
-        </div>
+            <div class="grid-stats">
+                <div class="card-stat">
+                    <i class="fas fa-hand-holding-usd"></i>
+                    <div><h3>Ingresos Hoy</h3><h2 id="stat-ingresos">$0</h2></div>
+                </div>
+                <div class="card-stat">
+                    <i class="fas fa-users"></i>
+                    <div>
+                        <h3>Ocupación</h3><h2 id="stat-ocupacion">0%</h2>
+                        <div class="progress-container"><div id="barra-ocupacion" class="progress-bar"></div></div>
+                    </div>
+                </div>
+                <div class="card-stat" id="alerta-stock">
+                    <i class="fas fa-volleyball-ball"></i>
+                    <div><h3>Balones en Bodega</h3><h2 id="stat-balones">0</h2></div>
+                </div>
+            </div>
+        </section>
 
-    </div>
+        <section id="modulo-inventario" class="modulo" style="display:none;">
+            <div class="header-modulo">
+                <h2>Inventario y Canchas</h2>
+                <p>Control de implementos y monitoreo de estados.</p>
+            </div>
+            <h3 class="sub-titulo">📦 Artículos y Equipos</h3>
+            <div id="lista-inventario" class="grid-cards"></div>
+
+            <h3 class="sub-titulo" style="margin-top:50px;">⚽ Estado de Canchas</h3>
+            <div id="lista-canchas" class="grid-cards"></div>
+        </section>
+
+    </main>
+
     <script src="app.js"></script>
 </body>
 </html>
