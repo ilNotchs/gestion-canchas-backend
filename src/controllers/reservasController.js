@@ -5,7 +5,12 @@ const crearReserva = async (req, res) => {
     try {
         const { nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas, balones_prestados, petos_rojos_prestados, petos_azules_prestados, metodo_pago } = req.body;
 
-        const [conflicto] = await conexion.query('SELECT id FROM reservas WHERE cancha_id = ? AND fecha_reserva = ? AND hora_inicio = ? AND estado = "activa"', [cancha_id, fecha_reserva, hora_inicio]);
+        // CORRECCIÓN APLICADA AQUÍ: Pasamos 'activa' como parámetro (?) para evitar el error de comillas
+        const [conflicto] = await conexion.query(
+            'SELECT id FROM reservas WHERE cancha_id = ? AND fecha_reserva = ? AND hora_inicio = ? AND estado = ?', 
+            [cancha_id, fecha_reserva, hora_inicio, 'activa']
+        );
+        
         if (conflicto.length > 0) return res.status(400).json({ mensaje: 'La cancha ya está reservada para esa fecha y hora.' });
 
         const [stock] = await conexion.query('SELECT articulo, color, cantidad_disponible FROM inventario');
@@ -58,7 +63,8 @@ const cancelarReserva = async (req, res) => {
         const reserva = reservaInfo[0];
         if (reserva.estado !== 'activa') throw new Error('La reserva ya está cancelada o finalizada');
 
-        await conexion.query('UPDATE reservas SET estado = "cancelada" WHERE id = ?', [id]);
+        // CORRECCIÓN PREVENTIVA AQUÍ TAMBIÉN: Pasamos 'cancelada' como parámetro
+        await conexion.query('UPDATE reservas SET estado = ? WHERE id = ?', ['cancelada', id]);
 
         if (reserva.balones_prestados > 0) await conexion.query("UPDATE inventario SET cantidad_disponible = LEAST(cantidad_total, cantidad_disponible + ?) WHERE articulo = 'Balón'", [reserva.balones_prestados]);
         if (reserva.petos_rojos_prestados > 0) await conexion.query("UPDATE inventario SET cantidad_disponible = LEAST(cantidad_total, cantidad_disponible + ?) WHERE articulo = 'Peto' AND color = 'Rojo'", [reserva.petos_rojos_prestados]);
