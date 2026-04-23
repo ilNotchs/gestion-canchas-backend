@@ -1,264 +1,214 @@
 /* =========================================================
-   NUEVA INTERFAZ DE LOGIN REDISEÑADA (Panel Dividido)
+   VARIABLES GLOBALES Y RESET
 ========================================================= */
+:root {
+    --verde-principal: #00ff00;
+    --verde-oscuro: #008080;
+    --fondo-oscuro: #0d0e12;
+    --fondo-tarjetas: #191b22;
+    --texto-gris: #a0a0a0;
+}
 
-#login-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1000;
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f4f7f6; /* Fondo claro para el interior de la app */
+    display: flex; /* Esto permite que el Sidebar y el Contenido se pongan lado a lado */
+    min-height: 100vh;
+}
+
+/* =========================================================
+   ESTRUCTURA PRINCIPAL (SIDEBAR Y CONTENIDO)
+========================================================= */
+.sidebar {
+    width: 260px;
+    background-color: #004d4d; /* Verde azulado profundo */
+    color: white;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #0d0e12; /* Fondo muy oscuro para todo el overlay */
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Tipografía moderna */
-    overflow: hidden; /* Previene scroll no deseado */
+    flex-direction: column;
+    padding: 20px;
+    position: fixed; /* Mantiene el menú siempre visible a la izquierda */
+    height: 100vh;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+    z-index: 900;
 }
 
-#login-container {
-    background: #191b22; /* Fondo oscuro del contenedor principal */
-    color: #fff;
-    width: 90%;
-    max-width: 1000px;
-    height: 90vh;
-    max-height: 700px;
-    border-radius: 20px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-    overflow: hidden;
-    display: flex; /* Layout de panel dividido */
+.sidebar h2 {
+    font-size: 1.5em;
+    margin-bottom: 30px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 15px;
 }
 
-/* Columna Izquierda (Marketing e Imagen) */
-.login-marketing {
+.main-content {
     flex: 1;
-    /* DESCRIPCIÓN: Imagen de fondo de una cancha deportiva de alta calidad (baloncesto/tenis) de noche bajo reflectores. */
-    background-image: url('https://placeholder.com/cancha_nocturna.jpg'); /* O URL de tu imagen */
-    background-size: cover;
-    background-position: center;
-    position: relative;
-    display: flex;
-    align-items: flex-end;
+    margin-left: 260px; /* Deja el espacio exacto para que el sidebar no lo tape */
     padding: 40px;
     box-sizing: border-box;
 }
 
-.login-marketing-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to top, rgba(0,128,128,0.7), rgba(0,0,0,0.3)); /* Degradado verde/negro */
-}
-
-.login-marketing-content {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.login-marketing-title {
-    font-size: 2.5em;
-    margin: 0;
-    color: #fff;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-}
-
-.login-marketing-subtitle {
-    font-size: 1.1em;
-    color: #e0e0e0;
-    margin: 0;
-    max-width: 80%;
-}
-
-.login-marketing-list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.login-marketing-item {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.login-marketing-icon {
-    font-size: 1.5em;
-    color: #00ff00; /* Verde brillante para iconos */
-}
-
-.login-marketing-item strong {
-    display: block;
-    margin-bottom: 5px;
-    color: #fff;
-}
-
-.login-marketing-item p {
-    font-size: 0.9em;
+/* =========================================================
+   BOTONES DEL MENÚ
+========================================================= */
+.menu-btn {
+    background: none;
+    border: none;
     color: #ccc;
-    margin: 0;
-}
-
-/* Columna Derecha (Formulario de Login) */
-.login-form-area {
-    flex: 1;
-    padding: 60px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.login-form-header {
-    margin-bottom: 40px;
+    padding: 15px;
     text-align: left;
+    font-size: 1.1em;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s;
+    margin-bottom: 10px;
+    width: 100%;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 15px;
 }
 
-.login-form-header-icon {
-    font-size: 2em;
-    color: #00ff00;
+.menu-btn i {
+    width: 25px;
 }
 
-.login-form-header-title {
-    font-size: 1.8em;
-    margin: 0;
-    color: #00ff00;
+.menu-btn:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
 }
 
-.login-form-tabs {
+.menu-btn.active {
+    background-color: var(--verde-oscuro);
+    color: white;
+    font-weight: bold;
+}
+
+/* =========================================================
+   MÓDULOS Y TARJETAS
+========================================================= */
+.modulo {
+    display: none; /* Se activa con JS */
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s ease;
+}
+
+.modulo.activo {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.grid-dashboard, .grid-inventario {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.tarjeta-stat, .tarjeta-inv {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border-bottom: 5px solid var(--verde-oscuro);
+}
+
+/* =========================================================
+   INTERFAZ DE LOGIN (PANEL DIVIDIDO)
+========================================================= */
+#login-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 2000; /* Por encima de todo */
+    background-color: var(--fondo-oscuro);
     display: flex;
-    gap: 20px;
-    border-bottom: 2px solid #3a3f50;
-    margin-bottom: 30px;
+    align-items: center; justify-content: center;
 }
 
-.login-form-tabs h3 {
-    margin: 0;
-    color: #fff;
-    cursor: default; /* Pestaña única */
-    font-weight: 500;
+#login-container {
+    background: var(--fondo-tarjetas);
+    width: 90%; max-width: 1000px;
+    height: 85vh; border-radius: 20px;
+    display: flex; overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
 }
 
-.login-form-tabs h3.active {
-    border-bottom: 3px solid #00ff00; /* Subrayado verde para pestaña activa */
-    padding-bottom: 10px;
+.login-marketing {
+    flex: 1;
+    background-image: url('https://images.unsplash.com/photo-1544919982-b61976f0ba43?q=80&w=1000&auto=format&fit=crop'); /* Imagen de cancha pro */
+    background-size: cover; background-position: center;
+    position: relative; padding: 40px;
+    display: flex; align-items: flex-end;
 }
 
-.login-form-welcome {
-    font-size: 2em;
-    margin-bottom: 10px;
-    font-weight: 600;
+.login-marketing-overlay {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: linear-gradient(to top, rgba(0,77,77,0.9), rgba(0,0,0,0.2));
 }
 
-.login-form-subwelcome {
-    color: #a0a0a0;
-    margin-bottom: 30px;
-}
+.login-marketing-content { position: relative; z-index: 2; }
 
-#form-login {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+.login-form-area {
+    flex: 1; padding: 50px;
+    background-color: var(--fondo-tarjetas);
+    display: flex; flex-direction: column; justify-content: center;
+    color: white;
 }
 
 .login-input-group {
+    margin-bottom: 20px;
     position: relative;
 }
 
-.login-input-icon {
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #6c757d; /* Gris para iconos de input */
-}
-
-.login-input-eye {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #6c757d;
-    cursor: pointer;
-}
-
-/* Estilo de los inputs en el formulario rediseñado */
-.login-form-area input[type="text"],
-.login-form-area input[type="password"] {
+.login-input-group input {
     width: 100%;
-    padding: 15px 15px 15px 50px; /* Padding izquierdo para icono */
+    padding: 15px 15px 15px 45px;
+    background: #252833;
     border: 1px solid #3a3f50;
     border-radius: 8px;
+    color: white;
     font-size: 16px;
-    background-color: #f8f9fa; /* Color gris muy claro para los inputs */
-    color: #333; /* Color de texto oscuro para los inputs */
-    box-sizing: border-box; /* Asegura que el padding no cambie el tamaño */
-    transition: border-color 0.3s;
 }
 
-.login-form-area input[type="text"]:focus,
-.login-form-area input[type="password"]:focus {
-    border-color: #00ff00;
-    outline: none;
-}
-
-.login-input-options {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 14px;
-}
-
-.login-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-}
-
-.login-checkbox input[type="checkbox"] {
-    accent-color: #00ff00; /* Color verde para el checkbox */
-}
-
-.login-forgot-password {
-    color: #00ff00;
-    text-decoration: none;
-    transition: color 0.3s;
-}
-
-.login-forgot-password:hover {
-    color: #28ff28; /* Verde más claro al hover */
+.login-input-group i {
+    position: absolute;
+    left: 15px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--verde-principal);
 }
 
 .login-submit-btn {
-    background: #00ff00; /* Botón principal verde */
-    color: #fff;
-    border: none;
-    padding: 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 18px;
-    transition: background 0.3s;
-    margin-top: 10px;
+    background-color: var(--verde-principal);
+    color: #000;
+    padding: 15px; border: none; border-radius: 8px;
+    font-weight: bold; font-size: 1.1em; cursor: pointer;
+    transition: 0.3s;
 }
 
 .login-submit-btn:hover {
-    background: #28ff28;
+    background-color: #28ff28;
+    transform: translateY(-2px);
 }
 
-#error-login {
-    color: red;
-    display: none;
-    margin-top: 15px;
-    font-weight: bold;
-    text-align: center;
+/* =========================================================
+   ANIMACIONES
+========================================================= */
+@keyframes alertaPeligro {
+    0% { border-bottom-color: var(--verde-oscuro); }
+    50% { border-bottom-color: #dc3545; background-color: #fff5f5; }
+    100% { border-bottom-color: var(--verde-oscuro); }
+}
+
+.alerta-animada {
+    animation: alertaPeligro 1.5s infinite;
+}
+
+/* Responsive */
+@media (max-width: 800px) {
+    .login-marketing { display: none; }
+    .sidebar { width: 70px; padding: 10px; }
+    .sidebar h2, .menu-btn span { display: none; }
+    .main-content { margin-left: 70px; }
 }
