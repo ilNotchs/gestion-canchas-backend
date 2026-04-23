@@ -1,94 +1,50 @@
-/* =========================================================
-   VARIABLES GLOBALES Y RESET
-========================================================= */
 :root {
     --verde-principal: #00ff00;
-    --verde-oscuro: #008080;
+    --verde-oscuro: #004d4d;
     --fondo-oscuro: #0d0e12;
     --fondo-tarjetas: #191b22;
-    --texto-gris: #a0a0a0;
 }
 
 body {
     margin: 0;
     padding: 0;
     font-family: 'Segoe UI', sans-serif;
-    background-color: #f4f7f6; /* Fondo claro para el interior de la app */
-    display: flex; /* Esto permite que el Sidebar y el Contenido se pongan lado a lado */
+    background-color: #f4f7f6;
+    display: flex; /* Sidebar y Main Content lado a lado */
     min-height: 100vh;
 }
 
-/* =========================================================
-   ESTRUCTURA PRINCIPAL (SIDEBAR Y CONTENIDO)
-========================================================= */
+/* SIDEBAR */
 .sidebar {
     width: 260px;
-    background-color: #004d4d; /* Verde azulado profundo */
+    background-color: var(--verde-oscuro);
     color: white;
     display: flex;
     flex-direction: column;
     padding: 20px;
-    position: fixed; /* Mantiene el menú siempre visible a la izquierda */
+    position: fixed;
     height: 100vh;
-    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
     z-index: 900;
+    box-sizing: border-box;
 }
 
 .sidebar h2 {
-    font-size: 1.5em;
-    margin-bottom: 30px;
     text-align: center;
     border-bottom: 1px solid rgba(255,255,255,0.1);
     padding-bottom: 15px;
 }
 
+/* CONTENIDO PRINCIPAL */
 .main-content {
     flex: 1;
-    margin-left: 260px; /* Deja el espacio exacto para que el sidebar no lo tape */
+    margin-left: 260px; /* Deja espacio para la sidebar fija */
     padding: 40px;
     box-sizing: border-box;
 }
 
-/* =========================================================
-   BOTONES DEL MENÚ
-========================================================= */
-.menu-btn {
-    background: none;
-    border: none;
-    color: #ccc;
-    padding: 15px;
-    text-align: left;
-    font-size: 1.1em;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.3s;
-    margin-bottom: 10px;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.menu-btn i {
-    width: 25px;
-}
-
-.menu-btn:hover {
-    background-color: rgba(255,255,255,0.1);
-    color: white;
-}
-
-.menu-btn.active {
-    background-color: var(--verde-oscuro);
-    color: white;
-    font-weight: bold;
-}
-
-/* =========================================================
-   MÓDULOS Y TARJETAS
-========================================================= */
+/* MÓDULOS */
 .modulo {
-    display: none; /* Se activa con JS */
+    display: none; /* JS lo cambia a block */
     opacity: 0;
     transform: translateY(20px);
     transition: all 0.4s ease;
@@ -100,115 +56,91 @@ body {
     transform: translateY(0);
 }
 
+/* BOTONES MENÚ */
+.menu-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    padding: 15px;
+    text-align: left;
+    font-size: 1.1em;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+.menu-btn.active {
+    background: rgba(255,255,255,0.1);
+    color: var(--verde-principal);
+    font-weight: bold;
+}
+
+/* GRID Y TARJETAS */
 .grid-dashboard, .grid-inventario {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 25px;
-    margin-top: 20px;
+    gap: 20px;
 }
 
 .tarjeta-stat, .tarjeta-inv {
     background: white;
-    padding: 25px;
+    padding: 20px;
     border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    border-bottom: 5px solid var(--verde-oscuro);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    border-bottom: 4px solid var(--verde-oscuro);
 }
 
-/* =========================================================
-   INTERFAZ DE LOGIN (PANEL DIVIDIDO)
-========================================================= */
+/* LOGIN OVERLAY */
 #login-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 2000; /* Por encima de todo */
-    background-color: var(--fondo-oscuro);
-    display: flex;
-    align-items: center; justify-content: center;
+    background: var(--fondo-oscuro);
+    z-index: 2000;
+    display: flex; align-items: center; justify-content: center;
 }
 
 #login-container {
+    width: 90%; max-width: 900px; height: 500px;
     background: var(--fondo-tarjetas);
-    width: 90%; max-width: 1000px;
-    height: 85vh; border-radius: 20px;
-    display: flex; overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    display: flex; border-radius: 20px; overflow: hidden;
 }
 
 .login-marketing {
     flex: 1;
-    background-image: url('https://images.unsplash.com/photo-1544919982-b61976f0ba43?q=80&w=1000&auto=format&fit=crop'); /* Imagen de cancha pro */
-    background-size: cover; background-position: center;
-    position: relative; padding: 40px;
-    display: flex; align-items: flex-end;
+    background: url('https://images.unsplash.com/photo-1544919982-b61976f0ba43?q=80&w=1000&auto=format&fit=crop') center/cover;
+    position: relative; padding: 40px; display: flex; align-items: flex-end;
 }
 
 .login-marketing-overlay {
     position: absolute; top:0; left:0; width:100%; height:100%;
-    background: linear-gradient(to top, rgba(0,77,77,0.9), rgba(0,0,0,0.2));
+    background: linear-gradient(to top, rgba(0,77,77,0.9), transparent);
 }
-
-.login-marketing-content { position: relative; z-index: 2; }
 
 .login-form-area {
-    flex: 1; padding: 50px;
-    background-color: var(--fondo-tarjetas);
-    display: flex; flex-direction: column; justify-content: center;
-    color: white;
+    flex: 1; padding: 40px; color: white; display: flex; flex-direction: column; justify-content: center;
 }
 
-.login-input-group {
-    margin-bottom: 20px;
-    position: relative;
-}
-
-.login-input-group input {
-    width: 100%;
-    padding: 15px 15px 15px 45px;
-    background: #252833;
-    border: 1px solid #3a3f50;
-    border-radius: 8px;
-    color: white;
-    font-size: 16px;
-}
-
-.login-input-group i {
-    position: absolute;
-    left: 15px; top: 50%;
-    transform: translateY(-50%);
-    color: var(--verde-principal);
-}
+.login-input-group { margin-bottom: 20px; position: relative; }
+.login-input-group input { width: 100%; padding: 12px 12px 12px 40px; background: #252833; border: 1px solid #3a3f50; color: white; border-radius: 8px; box-sizing: border-box; }
+.login-input-group i { position: absolute; left: 15px; top: 14px; color: var(--verde-principal); }
 
 .login-submit-btn {
-    background-color: var(--verde-principal);
-    color: #000;
-    padding: 15px; border: none; border-radius: 8px;
-    font-weight: bold; font-size: 1.1em; cursor: pointer;
-    transition: 0.3s;
+    background: var(--verde-principal); color: black; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;
 }
 
-.login-submit-btn:hover {
-    background-color: #28ff28;
-    transform: translateY(-2px);
-}
-
-/* =========================================================
-   ANIMACIONES
-========================================================= */
 @keyframes alertaPeligro {
-    0% { border-bottom-color: var(--verde-oscuro); }
-    50% { border-bottom-color: #dc3545; background-color: #fff5f5; }
-    100% { border-bottom-color: var(--verde-oscuro); }
+    50% { border-bottom-color: #dc3545; background: #fff5f5; }
 }
-
-.alerta-animada {
-    animation: alertaPeligro 1.5s infinite;
-}
+.alerta-animada { animation: alertaPeligro 1.5s infinite; }
 
 /* Responsive */
 @media (max-width: 800px) {
-    .login-marketing { display: none; }
-    .sidebar { width: 70px; padding: 10px; }
-    .sidebar h2, .menu-btn span { display: none; }
+    .sidebar { width: 70px; }
+    .sidebar h2, .sidebar span { display: none; }
     .main-content { margin-left: 70px; }
+    .login-marketing { display: none; }
 }

@@ -3,127 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FitCanchas - Reserva tu cancha y juega sin límites</title>
+    <title>FitCanchas - Gestión Profesional</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
     <div id="login-overlay">
-        
         <div id="login-container">
-            
             <div class="login-marketing">
                 <div class="login-marketing-overlay"></div>
                 <div class="login-marketing-content">
-                    <h1 class="login-marketing-title">Reserva tu cancha y juega sin límites</h1>
-                    <p class="login-marketing-subtitle">Encuentra las mejores canchas deportivas, reserva al instante y disfruta del deporte con tus amigos.</p>
-                    
-                    <div class="login-marketing-list">
-                        <div class="login-marketing-item">
-                            <i class="fas fa-calendar-check login-marketing-icon"></i>
-                            <div>
-                                <strong>Reserva fácil y rápida</strong>
-                                <p>Elige tu cancha y horario en segundos.</p>
-                            </div>
-                        </div>
-                        <div class="login-marketing-item">
-                            <i class="fas fa-shield-alt login-marketing-icon"></i>
-                            <div>
-                                <strong>Pagos seguros</strong>
-                                <p>Tu información y pagos están protegidos.</p>
-                            </div>
-                        </div>
-                        <div class="login-marketing-item">
-                            <i class="fas fa-trophy login-marketing-icon"></i>
-                            <div>
-                                <strong>Mejores canchas</strong>
-                                <p>Canchas verificadas y de calidad.</p>
-                            </div>
-                        </div>
-                        <div class="login-marketing-item">
-                            <i class="fas fa-lock login-marketing-icon"></i>
-                            <div>
-                                <strong>Plataforma 100% segura</strong>
-                                <p>Tus datos están protegidos con cifrado.</p>
-                            </div>
-                        </div>
-                    </div>
+                    <h1>Reserva tu cancha y juega sin límites</h1>
+                    <p>La plataforma líder para la gestión de complejos deportivos.</p>
                 </div>
             </div>
-
             <div class="login-form-area">
-                
                 <div class="login-form-header">
-                    <i class="fas fa-futbol login-form-header-icon"></i>
-                    <h2 class="login-form-header-title">FIT CANCHAS</h2>
+                    <i class="fas fa-futbol"></i>
+                    <h2>FIT CANCHAS</h2>
                 </div>
-
-                <div class="login-form-tabs">
-                    <h3 class="active">Iniciar sesión</h3>
-                    </div>
-
-                <h1 class="login-form-welcome">Bienvenido de nuevo</h1>
-                <p class="login-form-subwelcome">Inicia sesión para continuar reservando tus canchas.</p>
-
                 <form id="form-login">
-                    
                     <div class="login-input-group">
-                        <i class="fas fa-envelope login-input-icon"></i>
-                        <input type="text" id="user" placeholder="ejemplo@correo.com" required>
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="user" placeholder="Usuario" required>
                     </div>
-                    
                     <div class="login-input-group">
-                        <i class="fas fa-lock login-input-icon"></i>
-                        <input type="password" id="pass" placeholder="Ingresa tu contraseña" required>
-                        <i class="fas fa-eye login-input-eye" onclick="togglePasswordVisibility('pass')"></i>
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="pass" placeholder="Contraseña" required>
                     </div>
-
-                    <div class="login-input-options">
-                        <label class="login-checkbox"><input type="checkbox">Recordarme</label>
-                        <a href="#" class="login-forgot-password">¿Olvidaste tu contraseña?</a>
-                    </div>
-
                     <button type="submit" class="login-submit-btn">Iniciar sesión</button>
-                    
-                    </form>
-                <p id="error-login" style="color: red; display: none; margin-top: 15px; font-weight: bold; text-align: center;">❌ Credenciales inválidas</p>
-                
-                </div>
+                </form>
+                <p id="error-login" style="color: #ff4d4d; display: none; margin-top: 15px; text-align: center; font-weight: bold;">❌ Credenciales incorrectas</p>
+            </div>
         </div>
     </div>
 
     <div class="sidebar">
         <h2>⚽ FitCanchas</h2>
         <div id="menu-opciones">
-            <button id="btn-nav-dashboard" class="menu-btn active" onclick="mostrarModulo('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</button>
-            <button id="btn-nav-reservar" class="menu-btn" onclick="mostrarModulo('reservar')"><i class="fas fa-calendar-plus"></i> Reservar</button>
-            <button id="btn-nav-inventario" class="menu-btn" onclick="mostrarModulo('inventario')"><i class="fas fa-boxes"></i> Inventario</button>
+            <button class="menu-btn" onclick="mostrarModulo('dashboard')"><i class="fas fa-chart-line"></i> <span>Dashboard</span></button>
+            <button class="menu-btn" onclick="mostrarModulo('reservar')"><i class="fas fa-calendar-plus"></i> <span>Reservar</span></button>
+            <button class="menu-btn" onclick="mostrarModulo('inventario')"><i class="fas fa-boxes"></i> <span>Inventario</span></button>
         </div>
-        <button onclick="cerrarSesion()" style="margin-top: auto; background: none; border: 1px solid #ffffff55; color: white; padding: 10px; cursor: pointer; border-radius: 5px; width: 100%;">
-            <i class="fas fa-sign-out-alt"></i> Salir
-        </button>
+        <button onclick="cerrarSesion()" class="menu-btn" style="margin-top: auto; color: #ff9999;"><i class="fas fa-sign-out-alt"></i> <span>Cerrar Sesión</span></button>
     </div>
 
     <div class="main-content">
+        
+        <div id="modulo-dashboard" class="modulo">
+            <h2><i class="fas fa-heartbeat"></i> Dashboard de Operaciones</h2>
+            <div class="grid-dashboard">
+                <div class="tarjeta-stat">
+                    <i class="fas fa-money-bill-wave" style="color: #28a745; font-size: 2em;"></i>
+                    <h3>Ingresos Hoy</h3>
+                    <h2 id="stat-ingresos">$0</h2>
+                </div>
+                <div class="tarjeta-stat">
+                    <i class="fas fa-chart-pie" style="color: #17a2b8; font-size: 2em;"></i>
+                    <h3>Ocupación</h3>
+                    <h2 id="stat-ocupacion">0%</h2>
+                    <div class="barra-progreso"><div id="barra-ocupacion" class="progreso"></div></div>
+                </div>
+                <div class="tarjeta-stat" id="tarjeta-alerta-balones">
+                    <i class="fas fa-futbol" style="color: #ffc107; font-size: 2em;"></i>
+                    <h3>Balones en Stock</h3>
+                    <h2 id="stat-balones">0</h2>
+                </div>
+            </div>
         </div>
 
+        <div id="modulo-reservar" class="modulo">
+            <h2><i class="fas fa-calendar-check"></i> Nueva Reserva</h2>
+            <form id="form-reserva">
+                <label>Nombre del Cliente:</label>
+                <input type="text" id="nombre" required style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ddd;">
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label>Cancha:</label>
+                        <select id="tipo-cancha" onchange="calcularTotal()" style="width: 100%; padding: 10px;">
+                            <option value="11v11" data-precio="100000">Completa (11v11) - $100.000</option>
+                            <option value="7v7" data-precio="60000">Sintética (7v7) - $60.000</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Fecha:</label>
+                        <input type="date" id="fecha" required style="width: 100%; padding: 10px;">
+                    </div>
+                </div>
+
+                <div class="facturacion-box" id="recibo-imprimible" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                    <div id="logo-recibo" style="display: none; text-align: center;"><h3>⚽ FitCanchas</h3><hr></div>
+                    <p style="font-size: 1.2em; font-weight: bold;">Total: <span id="factura-total" style="color: #008080;">$0</span></p>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button type="button" onclick="descargarPDF()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">PDF</button>
+                        <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Confirmar Reserva</button>
+                    </div>
+                </div>
+                <input type="hidden" id="balones" value="1">
+                <input type="hidden" id="petos_rojos" value="11">
+                <input type="hidden" id="petos_azules" value="11">
+                <input type="hidden" id="metodo-pago" value="efectivo">
+            </form>
+        </div>
+
+        <div id="modulo-inventario" class="modulo">
+            <h2><i class="fas fa-boxes"></i> Inventario y Canchas</h2>
+            <div id="lista-canchas" class="grid-inventario"></div>
+            <div id="lista-inventario" class="grid-inventario" style="margin-top: 30px;"></div>
+        </div>
+
+    </div>
+
     <script src="app.js"></script>
-    <script>
-        // Función auxiliar para alternar la visibilidad de la contraseña
-        function togglePasswordVisibility(inputId) {
-            const input = document.getElementById(inputId);
-            const eyeIcon = input.nextElementSibling;
-            if (input.type === "password") {
-                input.type = "text";
-                eyeIcon.classList.remove('fa-eye');
-                eyeIcon.classList.add('fa-eye-slash');
-            } else {
-                input.type = "password";
-                eyeIcon.classList.remove('fa-eye-slash');
-                eyeIcon.classList.add('fa-eye');
-            }
-        }
-    </script>
 </body>
 </html>
