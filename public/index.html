@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FitCanchas</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
     <div class="sidebar">
         <h2>⚽ FitCanchas</h2>
-        <button class="menu-btn active" onclick="mostrarModulo('reservar')">📅 Reservar</button>
-        <button class="menu-btn" onclick="mostrarModulo('inventario')">📦 Inventario</button>
+        <button class="menu-btn active" onclick="mostrarModulo('reservar')"><i class="fas fa-calendar-check"></i> Reservar</button>
+        <button class="menu-btn" onclick="mostrarModulo('inventario')"><i class="fas fa-boxes"></i> Inventario</button>
     </div>
 
     <div class="main-content">
@@ -74,21 +75,44 @@
                     </div>
                 </div>
 
-                <div class="resumen">
-                    <h3>Total a Pagar: <span id="total-precio">$100,000</span></h3>
-                    <button type="submit" class="btn-guardar">Confirmar Reserva</button>
+                <div class="facturacion-box" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 25px; border-left: 5px solid #008080; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s;">
+                    <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 10px;"><i class="fas fa-receipt"></i> Resumen de la Reserva</h3>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1.1em;">
+                        <span>Cancha seleccionada:</span>
+                        <span id="factura-cancha-precio" style="font-weight: bold;">$0</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #666; font-size: 0.9em;">
+                        <span>Implementos base incluidos:</span>
+                        <span style="color: #28a745; font-weight: bold;">Gratis</span>
+                    </div>
+
+                    <div id="seccion-extras" style="display: none; background-color: #fff3cd; padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #ffc107;">
+                        <div style="display: flex; justify-content: space-between; color: #856404;">
+                            <span><strong>Cobro por Extras:</strong> (Balones o Petos Adicionales)</span>
+                            <span id="factura-extras-precio" style="font-weight: bold;">$0</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 2px dashed #ccc; font-weight: bold; font-size: 1.4em;">
+                        <span>Total a Pagar:</span>
+                        <span id="factura-total" style="color: #008080;">$0</span>
+                    </div>
+
+                    <button type="submit" class="btn-guardar" style="width: 100%; margin-top: 20px; font-size: 1.1em; padding: 12px;"><i class="fas fa-check-circle"></i> Confirmar Reserva</button>
                 </div>
             </form>
         </div>
 
         <div id="modulo-inventario" class="modulo" style="display: none;">
             <h2>Control de Inventario y Canchas</h2>
-            <button onclick="cargarInventario()" class="btn-actualizar">🔄 Actualizar Datos</button>
+            <button onclick="cargarInventario()" class="btn-actualizar"><i class="fas fa-sync-alt"></i> Actualizar Datos</button>
             
-            <h3 style="margin: 20px 0 10px 0; color: #008080;">📦 Artículos</h3>
+            <h3 style="margin: 20px 0 10px 0; color: #008080;"><i class="fas fa-box-open"></i> Artículos</h3>
             <div id="lista-inventario" class="grid-inventario"></div>
 
-            <h3 style="margin: 30px 0 10px 0; color: #008080;">⚽ Estado de las Canchas</h3>
+            <h3 style="margin: 30px 0 10px 0; color: #008080;"><i class="fas fa-futbol"></i> Estado de las Canchas</h3>
             <div id="lista-canchas" class="grid-inventario"></div>
         </div>
 

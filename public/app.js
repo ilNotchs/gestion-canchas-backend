@@ -1,64 +1,112 @@
 // === 1. Lógica para cambiar entre módulos ===
 function mostrarModulo(moduloId) {
-    // Ocultar todos los módulos
     document.getElementById('modulo-reservar').style.display = 'none';
     document.getElementById('modulo-inventario').style.display = 'none';
-    
-    // Quitar clase activa de los botones del menú
     document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
     
-    // Mostrar el módulo seleccionado
     document.getElementById(`modulo-${moduloId}`).style.display = 'block';
     
-    // Marcar botón como activo si el evento existe
     if (event && event.target && event.target.classList.contains('menu-btn')) {
         event.target.classList.add('active');
     }
     
-    // Si entramos a inventario, cargamos los datos automáticamente
-    if (moduloId === 'inventario') {
-        cargarInventario();
-    }
+    if (moduloId === 'inventario') cargarInventario();
 }
 
-// === 2. Lógica para calcular total y automatizar implementos ===
+// === 2. Lógica de Facturación Inteligente (Recibo Dinámico) ===
 function calcularTotal() {
     const selectCancha = document.getElementById('tipo-cancha');
     if (!selectCancha) return;
 
     const selectedOption = selectCancha.options[selectCancha.selectedIndex];
     const tipo = selectCancha.value; 
-    const precio = selectedOption.getAttribute('data-precio');
+    let precioCancha = parseInt(selectedOption.getAttribute('data-precio')) || 0;
+    let precioExtras = 0;
     
-    // Automatización de implementos según la cancha
+    // 1. Establecer implementos base según la cancha
+    let balonesBase = 1;
+    let petosRojosBase = 0;
+    let petosAzulesBase = 0;
+
     if (tipo.includes('11v11')) {
-        document.getElementById('petos_rojos').value = 11;
-        document.getElementById('petos_azules').value = 11;
-        document.getElementById('balones').value = 1;
+        petosRojosBase = 11;
+        petosAzulesBase = 11;
     } else if (tipo.includes('7v7')) {
-        document.getElementById('petos_rojos').value = 7;
-        document.getElementById('petos_azules').value = 7;
-        document.getElementById('balones').value = 1;
+        petosRojosBase = 7;
+        petosAzulesBase = 7;
     }
 
-    // Formatear precio a moneda colombiana
-    const precioFormateado = new Intl.NumberFormat('es-CO', { 
-        style: 'currency', 
-        currency: 'COP', 
-        maximumFractionDigits: 0 
-    }).format(precio);
+    const inputBalones = document.getElementById('balones');
+    const inputRojos = document.getElementById('petos_rojos');
+    const inputAzules = document.getElementById('petos_azules');
+
+    // Autocompletar solo si cambiamos de cancha y no hemos modificado manualmente
+    if (!inputBalones.dataset.modificado) {
+        inputBalones.value = balonesBase;
+        inputRojos.value = petosRojosBase;
+        inputAzules.value = petosAzulesBase;
+        inputBalones.dataset.modificado = "true"; 
+    }
+
+    const balonesPedidos = parseInt(inputBalones.value) || 0;
+    const rojosPedidos = parseInt(inputRojos.value) || 0;
+    const azulesPedidos = parseInt(inputAzules.value) || 0;
+
+    // 2. Calcular Costos Extras (Inventa precios aquí si quieres)
+    const costoBalonExtra = 5000;
+    const costoPetoExtra = 2000;
+
+    if (balonesPedidos > balonesBase) precioExtras += (balonesPedidos - balonesBase) * costoBalonExtra;
+    if (rojosPedidos > petosRojosBase) precioExtras += (rojosPedidos - petosRojosBase) * costoPetoExtra;
+    if (azulesPedidos > petosAzulesBase) precioExtras += (azulesPedidos - petosAzulesBase) * costoPetoExtra;
+
+    // 3. Actualizar el Recibo en el HTML
+    const formateador = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
     
-    document.getElementById('total-precio').innerText = precioFormateado;
+    document.getElementById('factura-cancha-precio').innerText = formateador.format(precioCancha);
+    
+    const elSeccionExtras = document.getElementById('seccion-extras');
+    const elExtrasPrecio = document.getElementById('factura-extras-precio');
+
+    if (precioExtras > 0) {
+        elSeccionExtras.style.display = 'block';
+        elExtrasPrecio.innerText = formateador.format(precioExtras);
+    } else {
+        elSeccionExtras.style.display = 'none';
+    }
+
+    const totalApagar = precioCancha + precioExtras;
+    document.getElementById('factura-total').innerText = formateador.format(totalApagar);
+
+    // Pequeña animación para que se note el cambio de precio
+    const cajaFacturacion = document.querySelector('.facturacion-box');
+    if (cajaFacturacion) {
+        cajaFacturacion.style.transform = 'scale(1.02)';
+        setTimeout(() => cajaFacturacion.style.transform = 'scale(1)', 150);
+    }
 }
 
-// Inicializar el cálculo al cargar la página
+// === Event Listeners de Carga ===
 window.onload = () => {
-    if (document.getElementById('tipo-cancha')) {
-        calcularTotal();
+    const selectCancha = document.getElementById('tipo-cancha');
+    if (selectCancha) {
+        calcularTotal(); // Calcular al inicio
+        
+        selectCancha.addEventListener('change', () => {
+            // Si cambian de cancha, reiniciamos los inputs a sus bases
+            document.getElementById('balones').dataset.modificado = "";
+            calcularTotal();
+        });
     }
+
+    // Si el usuario teclea números en los implementos, recalculamos en tiempo real
+    ['balones', 'petos_rojos', 'petos_azules'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.addEventListener('input', calcularTotal);
+    });
 };
 
-// === 3. Enviar Reserva al Backend (RUTAS RELATIVAS) ===
+// === 3. Enviar Reserva al Backend ===
 const formReserva = document.getElementById('form-reserva');
 if (formReserva) {
     formReserva.addEventListener('submit', async (e) => {
@@ -67,7 +115,7 @@ if (formReserva) {
         const tipoCancha = document.getElementById('tipo-cancha').value;
         const nuevaReserva = {
             nombre_cliente: document.getElementById('nombre').value,
-            cancha_id: tipoCancha.includes('11v11') ? 1 : 11,
+            cancha_id: tipoCancha.includes('11v11') ? 1 : 11, // Puedes mejorar esta lógica después si el usuario elige una específica
             fecha_reserva: document.getElementById('fecha').value,
             hora_inicio: document.getElementById('hora').value,
             horas_alquiladas: 1,
@@ -89,6 +137,7 @@ if (formReserva) {
             if (respuesta.ok) {
                 alert('✅ ¡Reserva exitosa!\n' + resultado.mensaje);
                 formReserva.reset(); 
+                document.getElementById('balones').dataset.modificado = ""; // Reiniciar lógica
                 calcularTotal(); 
             } else {
                 alert('❌ No se pudo reservar: ' + resultado.mensaje);
@@ -99,7 +148,7 @@ if (formReserva) {
     });
 }
 
-// === 4. Cargar Inventario y Canchas (RUTAS RELATIVAS) ===
+// === 4. Cargar Inventario y Canchas ===
 async function cargarInventario() {
     const contenedorInv = document.getElementById('lista-inventario');
     const contenedorCanchas = document.getElementById('lista-canchas');
@@ -110,7 +159,6 @@ async function cargarInventario() {
     contenedorCanchas.innerHTML = '<p>Cargando canchas...</p>';
 
     try {
-        // Ejecutamos todas las peticiones al tiempo para más velocidad
         const [resInv, resCan, resRes] = await Promise.all([
             fetch('/api/inventario', { cache: 'no-store' }),
             fetch('/api/canchas', { cache: 'no-store' }),
@@ -121,7 +169,7 @@ async function cargarInventario() {
         const canchas = await resCan.json();
         const reservasActivas = await resRes.json();
 
-        // --- Renderizar Inventario ---
+        // Renderizar Inventario
         contenedorInv.innerHTML = ''; 
         datosInv.forEach(item => {
             const colorInfo = item.color ? `(${item.color})` : '';
@@ -134,12 +182,12 @@ async function cargarInventario() {
             `;
         });
 
-        // --- Renderizar Canchas ---
+        // Renderizar Canchas
         contenedorCanchas.innerHTML = ''; 
         canchas.forEach(cancha => {
             const r = reservasActivas.find(res => res.cancha_id === cancha.id);
-            
             let htmlEstado = '';
+            
             if (r) {
                 const fechaLimpia = r.fecha_reserva.split('T')[0];
                 htmlEstado = `
@@ -165,21 +213,16 @@ async function cargarInventario() {
         });
 
     } catch (error) {
-        console.error("Error al cargar datos:", error);
-        contenedorInv.innerHTML = '<p style="color:red;">Error al conectar con la base de datos.</p>';
-        contenedorCanchas.innerHTML = '<p style="color:red;">Error al conectar con la base de datos.</p>';
+        contenedorInv.innerHTML = '<p style="color:red;">Error de conexión.</p>';
+        contenedorCanchas.innerHTML = '<p style="color:red;">Error de conexión.</p>';
     }
 }
 
 // === 5. Cancelar Reserva ===
 async function cancelarReserva(reservaId) {
     if (!confirm("¿Seguro que quieres cancelar esta reserva y devolver los artículos al inventario?")) return;
-
     try {
-        const respuesta = await fetch(`/api/reservas/${reservaId}/cancelar`, { 
-            method: 'PUT' 
-        });
-        
+        const respuesta = await fetch(`/api/reservas/${reservaId}/cancelar`, { method: 'PUT' });
         if (respuesta.ok) {
             alert('✅ Reserva cancelada con éxito.');
             cargarInventario(); 
