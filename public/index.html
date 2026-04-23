@@ -14,30 +14,49 @@
         <div class="sidebar-header">
             <h1 class="logo-texto">FIT<span>CANCHAS</span></h1>
         </div>
-        
         <div id="menu-opciones">
             <button class="menu-btn" onclick="mostrarModulo('dashboard')"><i class="fas fa-chart-line"></i> <span>Dashboard</span></button>
             <button class="menu-btn" onclick="mostrarModulo('reservar')"><i class="fas fa-calendar-plus"></i> <span>Reservar</span></button>
             <button class="menu-btn" onclick="mostrarModulo('inventario')"><i class="fas fa-boxes"></i> <span>Inventario</span></button>
         </div>
-        
         <button onclick="cerrarSesion()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Salir</span></button>
     </div>
 
     <div class="main-content">
         
+        <div id="modulo-dashboard" class="modulo">
+            <div class="header-modulo">
+                <h2><i class="fas fa-chart-pie"></i> Dashboard</h2>
+                <p>Resumen de la operación hoy.</p>
+            </div>
+            <div class="grid-dashboard">
+                <div class="tarjeta-stat">
+                    <i class="fas fa-money-bill-wave" style="color: #22c55e; font-size: 1.5em;"></i>
+                    <h3>Ingresos Estimados</h3>
+                    <h2 id="stat-ingresos">$0</h2>
+                </div>
+                <div class="tarjeta-stat">
+                    <h3>Ocupación</h3>
+                    <h2 id="stat-ocupacion">0%</h2>
+                    <div class="barra-progreso"><div id="barra-ocupacion" class="progreso"></div></div>
+                </div>
+                <div class="tarjeta-stat" id="tarjeta-alerta-balones">
+                    <h3>Balones Disponibles</h3>
+                    <h2 id="stat-balones">0</h2>
+                </div>
+            </div>
+        </div>
+
         <div id="modulo-reservar" class="modulo">
             <div class="header-modulo">
                 <h2><i class="fas fa-calendar-check"></i> Nueva Reserva</h2>
                 <p>Completa los datos para asegurar la cancha.</p>
             </div>
-
             <form id="form-reserva" class="form-premium">
                 <div class="input-group">
                     <label>Nombre del Cliente</label>
-                    <input type="text" id="nombre" placeholder="Nombre completo del cliente" required>
+                    <input type="text" id="nombre" placeholder="Nombre completo" required>
                 </div>
-
                 <div class="fila-form">
                     <div class="input-group">
                         <label>Cancha y Promoción</label>
@@ -49,38 +68,30 @@
                         </select>
                     </div>
                     <div class="input-group">
-                        <label>Fecha del Evento</label>
+                        <label>Fecha</label>
                         <input type="date" id="fecha" required>
                     </div>
                     <div class="input-group">
                         <label>Hora</label>
                         <select id="hora" required>
-                            <option value="18:00:00">06:00 PM</option>
-                            <option value="19:00:00">07:00 PM</option>
-                            <option value="20:00:00">08:00 PM</option>
-                            <option value="21:00:00">09:00 PM</option>
+                            <option value="18:00:00">06:00 PM</option><option value="19:00:00">07:00 PM</option>
+                            <option value="20:00:00">08:00 PM</option><option value="21:00:00">09:00 PM</option>
                         </select>
                     </div>
                 </div>
-
                 <div class="seccion-implementos">
-                    <h3>Implementos Adicionales</h3>
                     <div class="fila-form">
                         <div class="input-group">
-                            <label>Balones</label>
-                            <input type="number" id="balones" value="1" min="0">
+                            <label>Balones</label><input type="number" id="balones" value="1" min="0">
                         </div>
                         <div class="input-group">
-                            <label>Petos Rojos</label>
-                            <input type="number" id="petos_rojos" value="11" min="0">
+                            <label>Petos Rojos</label><input type="number" id="petos_rojos" value="11" min="0">
                         </div>
                         <div class="input-group">
-                            <label>Petos Azules</label>
-                            <input type="number" id="petos_azules" value="11" min="0">
+                            <label>Petos Azules</label><input type="number" id="petos_azules" value="11" min="0">
                         </div>
                     </div>
                 </div>
-
                 <div class="facturacion-box" id="recibo-imprimible">
                     <div id="logo-recibo" style="display:none; text-align:center;"><h2>FIT CANCHAS</h2><hr></div>
                     <div class="resumen-pago">
@@ -95,11 +106,18 @@
             </form>
         </div>
 
-        <div id="modulo-dashboard" class="modulo">...</div>
-        <div id="modulo-inventario" class="modulo">...</div>
+        <div id="modulo-inventario" class="modulo">
+            <div class="header-modulo">
+                <h2><i class="fas fa-boxes"></i> Inventario e Instalaciones</h2>
+                <p>Monitoreo de equipos y disponibilidad de canchas.</p>
+            </div>
+            <h3 style="color:#004d4d; margin-top:20px;">📦 Equipos</h3>
+            <div id="lista-inventario" class="grid-inventario"></div>
+            <h3 style="color:#004d4d; margin-top:40px;">⚽ Estado de Canchas</h3>
+            <div id="lista-canchas" class="grid-inventario"></div>
+        </div>
 
     </div>
-
     <script src="app.js"></script>
 </body>
 </html>
