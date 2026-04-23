@@ -6,18 +6,48 @@
     <title>FitCanchas</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
     <div class="sidebar">
         <h2>⚽ FitCanchas</h2>
-        <button class="menu-btn active" onclick="mostrarModulo('reservar')"><i class="fas fa-calendar-check"></i> Reservar</button>
+        <button class="menu-btn active" onclick="mostrarModulo('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</button>
+        <button class="menu-btn" onclick="mostrarModulo('reservar')"><i class="fas fa-calendar-check"></i> Reservar</button>
         <button class="menu-btn" onclick="mostrarModulo('inventario')"><i class="fas fa-boxes"></i> Inventario</button>
     </div>
 
     <div class="main-content">
         
-        <div id="modulo-reservar" class="modulo activo">
+        <div id="modulo-dashboard" class="modulo activo">
+            <h2><i class="fas fa-heartbeat"></i> Signos Vitales del Negocio</h2>
+            <p>Resumen en tiempo real de la operación de FitCanchas.</p>
+            
+            <div class="grid-dashboard">
+                <div class="tarjeta-stat">
+                    <i class="fas fa-money-bill-wave stat-icon" style="color: #28a745;"></i>
+                    <h3>Ingresos del Día</h3>
+                    <h2 id="stat-ingresos">$0</h2>
+                    <p style="font-size: 12px; color: gray;">Reservas activas</p>
+                </div>
+                
+                <div class="tarjeta-stat">
+                    <i class="fas fa-chart-pie stat-icon" style="color: #17a2b8;"></i>
+                    <h3>Ocupación Actual</h3>
+                    <h2 id="stat-ocupacion">0%</h2>
+                    <div class="barra-progreso"><div id="barra-ocupacion" class="progreso"></div></div>
+                </div>
+
+                <div class="tarjeta-stat" id="tarjeta-alerta-balones">
+                    <i class="fas fa-futbol stat-icon" style="color: #ffc107;"></i>
+                    <h3>Balones en Bodega</h3>
+                    <h2 id="stat-balones">...</h2>
+                    <p id="texto-alerta-balones" style="font-size: 12px; color: gray;">Nivel óptimo</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="modulo-reservar" class="modulo" style="display: none;">
             <h2>Nueva Reserva</h2>
             <form id="form-reserva">
                 <label>Nombre del Cliente:</label>
@@ -61,46 +91,40 @@
 
                 <h3>Implementos</h3>
                 <div class="fila-form">
-                    <div>
-                        <label>Balones:</label>
-                        <input type="number" id="balones" value="1" min="0" max="20">
-                    </div>
-                    <div>
-                        <label>Petos Rojos:</label>
-                        <input type="number" id="petos_rojos" value="11" min="0">
-                    </div>
-                    <div>
-                        <label>Petos Azules:</label>
-                        <input type="number" id="petos_azules" value="11" min="0">
-                    </div>
+                    <div><label>Balones:</label><input type="number" id="balones" value="1" min="0" max="20"></div>
+                    <div><label>Petos Rojos:</label><input type="number" id="petos_rojos" value="11" min="0"></div>
+                    <div><label>Petos Azules:</label><input type="number" id="petos_azules" value="11" min="0"></div>
                 </div>
 
-                <div class="facturacion-box" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 25px; border-left: 5px solid #008080; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s;">
+                <div class="facturacion-box" id="recibo-imprimible" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 25px; border-left: 5px solid #008080; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s;">
+                    <div style="text-align: center; display: none;" id="logo-recibo">
+                        <h2>⚽ FitCanchas</h2><p style="font-size: 12px; color: gray;">Comprobante de Reserva</p>
+                    </div>
+
                     <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 10px;"><i class="fas fa-receipt"></i> Resumen de la Reserva</h3>
                     
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1.1em;">
-                        <span>Cancha seleccionada:</span>
-                        <span id="factura-cancha-precio" style="font-weight: bold;">$0</span>
+                        <span>Cancha seleccionada:</span><span id="factura-cancha-precio" style="font-weight: bold;">$0</span>
                     </div>
                     
                     <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #666; font-size: 0.9em;">
-                        <span>Implementos base incluidos:</span>
-                        <span style="color: #28a745; font-weight: bold;">Gratis</span>
+                        <span>Implementos base incluidos:</span><span style="color: #28a745; font-weight: bold;">Gratis</span>
                     </div>
 
                     <div id="seccion-extras" style="display: none; background-color: #fff3cd; padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #ffc107;">
                         <div style="display: flex; justify-content: space-between; color: #856404;">
-                            <span><strong>Cobro por Extras:</strong> (Balones o Petos Adicionales)</span>
-                            <span id="factura-extras-precio" style="font-weight: bold;">$0</span>
+                            <span><strong>Cobro por Extras:</strong></span><span id="factura-extras-precio" style="font-weight: bold;">$0</span>
                         </div>
                     </div>
 
                     <div style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 2px dashed #ccc; font-weight: bold; font-size: 1.4em;">
-                        <span>Total a Pagar:</span>
-                        <span id="factura-total" style="color: #008080;">$0</span>
+                        <span>Total a Pagar:</span><span id="factura-total" style="color: #008080;">$0</span>
                     </div>
 
-                    <button type="submit" class="btn-guardar" style="width: 100%; margin-top: 20px; font-size: 1.1em; padding: 12px;"><i class="fas fa-check-circle"></i> Confirmar Reserva</button>
+                    <div id="botones-accion" style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="button" onclick="descargarPDF()" class="btn-secundario" style="width: 30%; font-size: 1em; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;"><i class="fas fa-file-pdf"></i> Guardar PDF</button>
+                        <button type="submit" class="btn-guardar" style="width: 70%; font-size: 1.1em; padding: 12px;"><i class="fas fa-check-circle"></i> Confirmar Reserva</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -108,16 +132,13 @@
         <div id="modulo-inventario" class="modulo" style="display: none;">
             <h2>Control de Inventario y Canchas</h2>
             <button onclick="cargarInventario()" class="btn-actualizar"><i class="fas fa-sync-alt"></i> Actualizar Datos</button>
-            
             <h3 style="margin: 20px 0 10px 0; color: #008080;"><i class="fas fa-box-open"></i> Artículos</h3>
             <div id="lista-inventario" class="grid-inventario"></div>
-
             <h3 style="margin: 30px 0 10px 0; color: #008080;"><i class="fas fa-futbol"></i> Estado de las Canchas</h3>
             <div id="lista-canchas" class="grid-inventario"></div>
         </div>
 
     </div>
-
     <script src="app.js"></script>
 </body>
 </html>
