@@ -1,8 +1,8 @@
+/* =========================================================
+   CONFIGURACIÓN PREMIUM - FITCANCHAS 2026
+========================================================= */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
 
-/* =========================================================
-   VARIABLES Y CONFIGURACIÓN BASE
-========================================================= */
 :root {
     --verde-neon: #22c55e;
     --verde-deep: #004d4d;
@@ -29,11 +29,11 @@ body {
 }
 
 /* =========================================================
-   SIDEBAR (CON FONDO DINÁMICO)
+   SIDEBAR CON IMAGEN DE FONDO
 ========================================================= */
 .sidebar {
     width: 300px;
-    background: linear-gradient(rgba(0, 77, 77, 0.9), rgba(0, 30, 30, 0.97)), 
+    background: linear-gradient(rgba(0, 77, 77, 0.9), rgba(0, 30, 30, 0.98)), 
                 url('https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=1000&auto=format&fit=crop');
     background-size: cover;
     background-position: center;
@@ -44,12 +44,12 @@ body {
     display: flex;
     flex-direction: column;
     z-index: 1000;
-    box-shadow: 10px 0 30px rgba(0,0,0,0.1);
+    box-shadow: 10px 0 40px rgba(0,0,0,0.15);
 }
 
 .logo-texto {
     font-weight: 800;
-    font-size: 1.8em;
+    font-size: 1.85em;
     letter-spacing: -2px;
     text-align: center;
     margin-bottom: 50px;
@@ -67,7 +67,7 @@ body {
     cursor: pointer;
     width: 100%;
     border-radius: 15px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
     gap: 15px;
@@ -75,7 +75,7 @@ body {
 }
 
 .menu-btn:hover, .menu-btn.active {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.12);
     color: white;
     box-shadow: inset 5px 0 0 var(--verde-neon);
 }
@@ -88,11 +88,11 @@ body {
     padding: 15px;
     border-radius: 12px;
     cursor: pointer;
-    transition: 0.3s;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
+    transition: 0.3s;
 }
 
 .btn-logout:hover {
@@ -101,7 +101,7 @@ body {
 }
 
 /* =========================================================
-   ESTRUCTURA DE CONTENIDO
+   MAINFRAME
 ========================================================= */
 .main-content {
     flex: 1;
@@ -111,19 +111,18 @@ body {
 }
 
 .header-modulo { margin-bottom: 40px; }
-.header-modulo h2 { font-size: 2.2em; font-weight: 800; letter-spacing: -1px; }
-.header-modulo p { color: var(--slate); font-size: 1.1em; margin-top: 5px; }
+.header-modulo h2 { font-size: 2.3em; font-weight: 800; letter-spacing: -1px; }
+.header-modulo p { color: var(--slate); font-size: 1.1em; }
 
-/* FORMULARIO PREMIUM */
+/* FORMULARIO AMPLIADO */
 .form-premium {
     background: var(--white);
     padding: 50px;
-    border-radius: 25px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.03);
-    max-width: 1100px;
+    border-radius: 30px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.04);
+    max-width: 1150px;
 }
 
-.input-block { margin-bottom: 30px; }
 .input-block label {
     display: block;
     font-weight: 600;
@@ -132,7 +131,6 @@ body {
     color: var(--slate);
 }
 
-/* TIPOGRAFÍA DE INPUTS (FIXED) */
 input, select {
     width: 100%;
     padding: 16px 20px;
@@ -149,24 +147,23 @@ input:focus, select:focus {
     outline: none;
     border-color: var(--verde-deep);
     background: white;
-    box-shadow: 0 0 0 4px rgba(0, 77, 77, 0.05);
+    box-shadow: 0 0 0 5px rgba(0, 77, 77, 0.05);
 }
 
 .fila-form {
     display: flex;
     gap: 25px;
-    margin-bottom: 15px;
+    margin-bottom: 25px;
 }
 
 .fila-form > div { flex: 1; }
 
-/* RECIBO Y FACTURACIÓN */
+/* RECIBO */
 .facturacion-box {
     background: #f1f5f9;
     padding: 40px;
     border-radius: 20px;
     margin-top: 50px;
-    border: 1px solid #e2e8f0;
 }
 
 .resumen-pago {
@@ -177,7 +174,7 @@ input:focus, select:focus {
 }
 
 .total-label { font-weight: 800; font-size: 1.3em; }
-.total-monto { font-size: 2.8em; font-weight: 800; color: var(--verde-deep); }
+.total-monto { font-size: 3em; font-weight: 800; color: var(--verde-deep); }
 
 .acciones-finales { display: flex; gap: 20px; }
 
@@ -186,74 +183,63 @@ input:focus, select:focus {
     background: var(--verde-neon);
     color: white;
     border: none;
-    padding: 20px;
-    border-radius: 15px;
+    padding: 22px;
+    border-radius: 18px;
     font-weight: 800;
-    font-size: 1.1em;
+    font-size: 1.2em;
     cursor: pointer;
     transition: 0.3s;
 }
 
 .btn-reservar-pro:hover {
     background: #16a34a;
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(34, 197, 94, 0.2);
+    transform: translateY(-4px);
+    box-shadow: 0 15px 30px rgba(34, 197, 94, 0.25);
 }
 
 .btn-pdf-pro {
-    flex: 1;
+    flex: 1.2;
     background: #64748b;
     color: white;
     border: none;
-    border-radius: 15px;
+    border-radius: 18px;
     cursor: pointer;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 12px;
 }
 
-/* TARJETAS */
+/* CARDS DE AGENDA */
 .grid-stats, .grid-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 30px;
 }
 
 .card-stat, .tarjeta-inv {
     background: white;
     padding: 35px;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+    border-radius: 25px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.02);
     border: 1px solid #f1f5f9;
-    transition: transform 0.3s ease;
 }
 
-.card-stat i { font-size: 2.5em; color: var(--verde-deep); margin-bottom: 20px; }
-.sub-titulo { font-weight: 800; font-size: 1.4em; margin-bottom: 20px; color: var(--verde-deep); }
-
-.progress-container {
-    background: #e2e8f0;
-    height: 12px;
-    border-radius: 10px;
+.reserva-item {
+    background: #fff1f2;
+    padding: 18px;
+    border-radius: 15px;
     margin-top: 15px;
-    overflow: hidden;
+    border-left: 6px solid var(--danger);
 }
 
-.progress-bar {
-    background: var(--verde-neon);
-    height: 100%;
-    width: 0;
-    transition: 1.5s cubic-bezier(0.1, 0, 0.1, 1);
-}
+.reserva-item h5 { font-size: 1.05em; color: var(--dark); margin-bottom: 5px; }
+.reserva-item p { font-size: 0.9em; color: var(--danger); font-weight: 800; }
 
-/* =========================================================
-   PANTALLA DE LOGIN
-========================================================= */
+/* LOGIN */
 #login-overlay {
-    position: fixed;
-    top: 0; left: 0;
+    position: fixed; top: 0; left: 0;
     width: 100%; height: 100%;
     background: #0d0e12;
     z-index: 2000;
@@ -264,17 +250,17 @@ input:focus, select:focus {
 
 #login-container {
     width: 90%;
-    max-width: 1100px;
-    height: 650px;
+    max-width: 1150px;
+    height: 680px;
     background: #191b22;
     display: flex;
-    border-radius: 30px;
+    border-radius: 35px;
     overflow: hidden;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+    box-shadow: 0 50px 120px rgba(0,0,0,0.6);
 }
 
 .login-marketing {
-    flex: 1.2;
+    flex: 1.3;
     position: relative;
     padding: 60px;
     display: flex;
@@ -285,19 +271,19 @@ input:focus, select:focus {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: linear-gradient(rgba(0,0,0,0.2), var(--verde-deep));
+    background: linear-gradient(rgba(0,0,0,0.1), var(--verde-deep));
 }
 
 .login-form-area {
     flex: 1;
-    padding: 70px;
+    padding: 80px;
     color: white;
     display: flex;
     flex-direction: column;
     justify-content: center;
 }
 
-.logo-texto-login { font-size: 2.2em; font-weight: 800; margin-bottom: 40px; }
+.logo-texto-login { font-size: 2.3em; font-weight: 800; margin-bottom: 10px; }
 .logo-texto-login span { color: var(--verde-neon); }
 
 .input-login-group {
@@ -307,13 +293,13 @@ input:focus, select:focus {
 
 .input-login-group i {
     position: absolute;
-    left: 18px; top: 18px;
+    left: 20px; top: 18px;
     color: var(--verde-neon);
-    font-size: 1.2em;
+    font-size: 1.3em;
 }
 
 .input-login-group input {
-    padding-left: 55px;
+    padding-left: 60px;
     background: #252833;
     border-color: #334155;
     color: white;
@@ -323,30 +309,20 @@ input:focus, select:focus {
     background: var(--verde-neon);
     color: white;
     border: none;
-    padding: 20px;
-    border-radius: 12px;
+    padding: 22px;
+    border-radius: 15px;
     font-weight: 800;
-    font-size: 1.1em;
+    font-size: 1.15em;
     cursor: pointer;
-    transition: 0.3s;
+    transition: 0.4s;
 }
 
-#error-login {
-    color: var(--danger);
-    margin-top: 20px;
-    font-weight: 700;
-    display: none;
-    text-align: center;
-}
-
-/* =========================================================
-   ANIMACIONES Y RESPONSIVE
-========================================================= */
+/* ANIMACIONES */
 .modulo {
     display: none;
     opacity: 0;
-    transform: translateY(30px);
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(40px);
+    transition: all 0.6s cubic-bezier(0.2, 0, 0.2, 1);
 }
 
 .modulo.activo {
@@ -355,9 +331,5 @@ input:focus, select:focus {
     transform: translateY(0);
 }
 
-@media (max-width: 1000px) {
-    .login-marketing { display: none; }
-    .sidebar { width: 80px; padding: 30px 10px; }
-    .sidebar h2, .sidebar span, .logo-texto { display: none; }
-    .main-content { margin-left: 80px; }
-}
+.progress-container { background: #e2e8f0; height: 12px; border-radius: 10px; margin-top: 20px; }
+.progress-bar { background: var(--verde-neon); height: 100%; width: 0; transition: 2s; }
