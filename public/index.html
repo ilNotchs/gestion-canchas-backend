@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FitCanchas - Gestión Profesional</title>
+    <title>FitCanchas - Gestión Deportiva</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -16,14 +16,17 @@
                 <div class="login-marketing-overlay"></div>
                 <div class="login-marketing-content">
                     <h1>Reserva tu cancha y juega sin límites</h1>
-                    <p>La plataforma líder para la gestión de complejos deportivos.</p>
+                    <div class="login-marketing-list">
+                        <div class="item"><i class="fas fa-calendar-check"></i> <div><strong>Fácil</strong><p>Reserva en segundos.</p></div></div>
+                        <div class="item"><i class="fas fa-shield-alt"></i> <div><strong>Seguro</strong><p>Pagos y datos protegidos.</p></div></div>
+                    </div>
                 </div>
             </div>
             <div class="login-form-area">
                 <div class="login-form-header">
-                    <i class="fas fa-futbol"></i>
-                    <h2>FIT CANCHAS</h2>
+                    <i class="fas fa-futbol"></i> <h2>FIT CANCHAS</h2>
                 </div>
+                <h1>Bienvenido</h1>
                 <form id="form-login">
                     <div class="login-input-group">
                         <i class="fas fa-user"></i>
@@ -35,41 +38,36 @@
                     </div>
                     <button type="submit" class="login-submit-btn">Iniciar sesión</button>
                 </form>
-                <p id="error-login" style="color: #ff4d4d; display: none; margin-top: 15px; text-align: center; font-weight: bold;">❌ Credenciales incorrectas</p>
+                <p id="error-login" style="color: #ff4d4d; display: none; margin-top: 15px; text-align: center;">❌ Datos incorrectos</p>
             </div>
         </div>
     </div>
 
     <div class="sidebar">
-        <h2>⚽ FitCanchas</h2>
-        <div id="menu-opciones">
-            <button class="menu-btn" onclick="mostrarModulo('dashboard')"><i class="fas fa-chart-line"></i> <span>Dashboard</span></button>
-            <button class="menu-btn" onclick="mostrarModulo('reservar')"><i class="fas fa-calendar-plus"></i> <span>Reservar</span></button>
-            <button class="menu-btn" onclick="mostrarModulo('inventario')"><i class="fas fa-boxes"></i> <span>Inventario</span></button>
-        </div>
-        <button onclick="cerrarSesion()" class="menu-btn" style="margin-top: auto; color: #ff9999;"><i class="fas fa-sign-out-alt"></i> <span>Cerrar Sesión</span></button>
+        <h2 style="margin-bottom: 30px;">⚽ FitCanchas</h2>
+        <button class="menu-btn" onclick="mostrarModulo('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</button>
+        <button class="menu-btn" onclick="mostrarModulo('reservar')"><i class="fas fa-calendar-plus"></i> Reservar</button>
+        <button class="menu-btn" onclick="mostrarModulo('inventario')"><i class="fas fa-boxes"></i> Inventario</button>
+        <button onclick="cerrarSesion()" class="menu-btn" style="margin-top: auto; color: #ff9999;"><i class="fas fa-sign-out-alt"></i> Salir</button>
     </div>
 
     <div class="main-content">
         
         <div id="modulo-dashboard" class="modulo">
-            <h2><i class="fas fa-heartbeat"></i> Dashboard de Operaciones</h2>
+            <h2><i class="fas fa-heartbeat"></i> Estado del Negocio</h2>
             <div class="grid-dashboard">
                 <div class="tarjeta-stat">
                     <i class="fas fa-money-bill-wave" style="color: #28a745; font-size: 2em;"></i>
-                    <h3>Ingresos Hoy</h3>
-                    <h2 id="stat-ingresos">$0</h2>
+                    <h3>Ingresos Hoy</h3><h2 id="stat-ingresos">$0</h2>
                 </div>
                 <div class="tarjeta-stat">
                     <i class="fas fa-chart-pie" style="color: #17a2b8; font-size: 2em;"></i>
-                    <h3>Ocupación</h3>
-                    <h2 id="stat-ocupacion">0%</h2>
+                    <h3>Ocupación</h3><h2 id="stat-ocupacion">0%</h2>
                     <div class="barra-progreso"><div id="barra-ocupacion" class="progreso"></div></div>
                 </div>
                 <div class="tarjeta-stat" id="tarjeta-alerta-balones">
                     <i class="fas fa-futbol" style="color: #ffc107; font-size: 2em;"></i>
-                    <h3>Balones en Stock</h3>
-                    <h2 id="stat-balones">0</h2>
+                    <h3>Balones Disponibles</h3><h2 id="stat-balones">0</h2>
                 </div>
             </div>
         </div>
@@ -78,43 +76,62 @@
             <h2><i class="fas fa-calendar-check"></i> Nueva Reserva</h2>
             <form id="form-reserva">
                 <label>Nombre del Cliente:</label>
-                <input type="text" id="nombre" required style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ddd;">
-                
-                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <div style="flex: 1;">
+                <input type="text" id="nombre" placeholder="Nombre completo" required class="input-full">
+
+                <div class="fila-form">
+                    <div>
                         <label>Cancha:</label>
-                        <select id="tipo-cancha" onchange="calcularTotal()" style="width: 100%; padding: 10px;">
+                        <select id="tipo-cancha" onchange="calcularTotal()">
                             <option value="11v11" data-precio="100000">Completa (11v11) - $100.000</option>
                             <option value="7v7" data-precio="60000">Sintética (7v7) - $60.000</option>
                         </select>
                     </div>
-                    <div style="flex: 1;">
+                    <div>
                         <label>Fecha:</label>
-                        <input type="date" id="fecha" required style="width: 100%; padding: 10px;">
+                        <input type="date" id="fecha" required>
+                    </div>
+                    <div>
+                        <label>Hora:</label>
+                        <select id="hora" required>
+                            <option value="18:00:00">06:00 PM</option>
+                            <option value="19:00:00">07:00 PM</option>
+                            <option value="20:00:00">08:00 PM</option>
+                            <option value="21:00:00">09:00 PM</option>
+                        </select>
                     </div>
                 </div>
 
-                <div class="facturacion-box" id="recibo-imprimible" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-                    <div id="logo-recibo" style="display: none; text-align: center;"><h3>⚽ FitCanchas</h3><hr></div>
-                    <p style="font-size: 1.2em; font-weight: bold;">Total: <span id="factura-total" style="color: #008080;">$0</span></p>
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button type="button" onclick="descargarPDF()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">PDF</button>
-                        <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; flex: 1; font-weight: bold;">Confirmar Reserva</button>
+                <h3>Implementos Extra</h3>
+                <div class="fila-form">
+                    <div><label>Balones:</label><input type="number" id="balones" value="1" min="0"></div>
+                    <div><label>Petos Rojos:</label><input type="number" id="petos_rojos" value="11" min="0"></div>
+                    <div><label>Petos Azules:</label><input type="number" id="petos_azules" value="11" min="0"></div>
+                </div>
+
+                <div class="facturacion-box" id="recibo-imprimible">
+                    <div id="logo-recibo" style="display:none; text-align:center;"><h2>⚽ FitCanchas</h2><hr></div>
+                    <div style="display:flex; justify-content:space-between">
+                        <strong>Total a Pagar:</strong>
+                        <span id="factura-total" style="color: #008080; font-size: 1.5em;">$0</span>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:15px">
+                        <button type="button" onclick="descargarPDF()" class="btn-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
+                        <button type="submit" class="btn-confirmar">Confirmar Reserva</button>
                     </div>
                 </div>
-                <input type="hidden" id="balones" value="1">
-                <input type="hidden" id="petos_rojos" value="11">
-                <input type="hidden" id="petos_azules" value="11">
                 <input type="hidden" id="metodo-pago" value="efectivo">
             </form>
         </div>
 
         <div id="modulo-inventario" class="modulo">
-            <h2><i class="fas fa-boxes"></i> Inventario y Canchas</h2>
-            <div id="lista-canchas" class="grid-inventario"></div>
-            <div id="lista-inventario" class="grid-inventario" style="margin-top: 30px;"></div>
-        </div>
+            <h2><i class="fas fa-boxes"></i> Control Total</h2>
+            
+            <h3 style="color: #008080;"><i class="fas fa-box-open"></i> Artículos en Bodega</h3>
+            <div id="lista-inventario" class="grid-inventario"></div>
 
+            <h3 style="color: #008080; margin-top: 40px;"><i class="fas fa-futbol"></i> Estado de las Canchas</h3>
+            <div id="lista-canchas" class="grid-inventario"></div>
+        </div>
     </div>
 
     <script src="app.js"></script>
