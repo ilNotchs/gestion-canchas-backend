@@ -5,46 +5,45 @@ require('dotenv').config();
 
 const app = express();
 
-// 1. Middlewares (Para que entienda JSON y permita conexiones)
+// === 1. MIDDLEWARES ===
+// Permite que el servidor entienda JSON y acepte peticiones desde el navegador
 app.use(cors());
 app.use(express.json());
 
-// === CONFIGURACIÓN DEL FRONTEND ===
-// Le decimos a Express que la carpeta 'public' contiene nuestra página web.
-// Al hacer esto, Express buscará automáticamente un archivo "index.html" para mostrar.
+// Servir archivos estáticos: Express buscará automáticamente el index.html en la carpeta 'public'
 app.use(express.static('public'));
 
-// 2. Importar todas las Rutas
+// === 2. IMPORTAR RUTAS Y CONTROLADORES ===
 const inventarioRoutes = require('./routes/inventarioRoutes');
 const canchasRoutes = require('./routes/canchasRoutes');
 const reservasRoutes = require('./routes/reservasRoutes');
+const authController = require('./controllers/authController'); // <-- Importamos el controlador de Login
 
-// 3. Usar las Rutas (Definir las URLs para los datos)
+// === 3. DEFINIR PUNTOS DE ACCESO (APIs) ===
 app.use('/api/inventario', inventarioRoutes);
 app.use('/api/canchas', canchasRoutes);
 app.use('/api/reservas', reservasRoutes);
 
-// Nota: Eliminamos el app.get('/') de prueba porque ahora el frontend 
-// (el archivo index.html) tomará el control de la ruta principal.
+// RUTA DE LOGIN: Recibe el usuario y contraseña del frontend para validarlos
+app.post('/api/login', authController.login); 
 
-// 4. Verificación de Base de Datos
+// === 4. VERIFICACIÓN DE CONEXIÓN A LA BASE DE DATOS ===
 const checkConnection = async () => {
     try {
+        // Hacemos una consulta simple para asegurar que la base de datos en Aiven responde
         await db.query('SELECT 1 + 1 AS result');
         console.log('✅ Conexión a la base de datos establecida con éxito.');
     } catch (error) {
-        console.error('❌ Error al conectar a la base de datos:', error.message);
+        console.error('❌ Error crítico al conectar a la base de datos:', error.message);
     }
 };
 
 checkConnection();
 
-// 5. Encender Servidor
+// === 5. ENCENDER EL SERVIDOR ===
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
-    console.log(`🌐 Frontend web listo en: http://localhost:${PORT}`);
-    console.log(`🔗 Inventario API: http://localhost:${PORT}/api/inventario`);
-    console.log(`🔗 Canchas API: http://localhost:${PORT}/api/canchas`);
-    console.log(`🔗 Reservas API: http://localhost:${PORT}/api/reservas`);
+    console.log(`🚀 Servidor FitCanchas corriendo con éxito`);
+    console.log(`🌐 Frontend web listo en el puerto ${PORT}`);
+    console.log(`🔑 Endpoint de Login configurado en: /api/login`);
 });
