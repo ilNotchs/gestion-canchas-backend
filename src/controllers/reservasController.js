@@ -3,7 +3,6 @@ const db = require('../config/db');
 const crearReserva = async (req, res) => {
     const conexion = await db.getConnection();
     try {
-        // Agregamos metodo_pago a los datos que recibimos
         const { nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas, balones_prestados, petos_rojos_prestados, petos_azules_prestados, metodo_pago } = req.body;
 
         const [conflicto] = await conexion.query('SELECT id FROM reservas WHERE cancha_id = ? AND fecha_reserva = ? AND hora_inicio = ? AND estado = "activa"', [cancha_id, fecha_reserva, hora_inicio]);
@@ -19,7 +18,6 @@ const crearReserva = async (req, res) => {
 
         await conexion.beginTransaction();
 
-        // Agregamos metodo_pago al INSERT
         const queryReserva = `INSERT INTO reservas (nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas, balones_prestados, petos_rojos_prestados, petos_azules_prestados, metodo_pago) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         const [resultado] = await conexion.query(queryReserva, [nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas || 1, balones_prestados || 0, petos_rojos_prestados || 0, petos_azules_prestados || 0, metodo_pago || 'efectivo']);
 
@@ -31,6 +29,7 @@ const crearReserva = async (req, res) => {
         res.status(201).json({ mensaje: 'Reserva creada exitosamente e inventario actualizado.', reservaId: resultado.insertId });
     } catch (error) {
         if (conexion) await conexion.rollback();
+        console.error("❌ Error en crearReserva:", error); // <-- EL CHIVATO
         res.status(500).json({ mensaje: 'Error interno al procesar la reserva.' });
     } finally {
         if (conexion) conexion.release();
@@ -42,6 +41,7 @@ const obtenerReservasActivas = async (req, res) => {
         const [rows] = await db.query(`SELECT r.*, c.nombre as nombre_cancha FROM reservas r JOIN canchas c ON r.cancha_id = c.id WHERE r.estado = 'activa'`);
         res.json(rows);
     } catch (error) {
+        console.error("❌ Error crítico en obtenerReservasActivas:", error); // <-- EL CHIVATO
         res.status(500).json({ mensaje: 'Error al obtener las reservas activas.' });
     }
 };
@@ -60,7 +60,6 @@ const cancelarReserva = async (req, res) => {
 
         await conexion.query('UPDATE reservas SET estado = "cancelada" WHERE id = ?', [id]);
 
-        // SOLUCIÓN AL BUG: Usamos LEAST para no pasarnos del límite de cantidad_total
         if (reserva.balones_prestados > 0) await conexion.query("UPDATE inventario SET cantidad_disponible = LEAST(cantidad_total, cantidad_disponible + ?) WHERE articulo = 'Balón'", [reserva.balones_prestados]);
         if (reserva.petos_rojos_prestados > 0) await conexion.query("UPDATE inventario SET cantidad_disponible = LEAST(cantidad_total, cantidad_disponible + ?) WHERE articulo = 'Peto' AND color = 'Rojo'", [reserva.petos_rojos_prestados]);
         if (reserva.petos_azules_prestados > 0) await conexion.query("UPDATE inventario SET cantidad_disponible = LEAST(cantidad_total, cantidad_disponible + ?) WHERE articulo = 'Peto' AND color = 'Azul'", [reserva.petos_azules_prestados]);
@@ -70,6 +69,7 @@ const cancelarReserva = async (req, res) => {
 
     } catch (error) {
         await conexion.rollback();
+        console.error("❌ Error en cancelarReserva:", error); // <-- EL CHIVATO
         res.status(500).json({ mensaje: error.message });
     } finally {
         conexion.release();
