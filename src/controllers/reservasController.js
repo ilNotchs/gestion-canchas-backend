@@ -3,8 +3,11 @@ const db = require('../config/db');
 const crearReserva = async (req, res) => {
     const conexion = await db.getConnection();
     try {
+        // Obtenemos los datos del usuario directamente del token de sesión
+        // Esto asegura que si 'Juan' está logueado, la reserva quede a su nombre
+        const { id: usuario_id, username } = req.user; 
+
         const { 
-            nombre_cliente, 
             cancha_id, 
             fecha_reserva, 
             hora_inicio, 
@@ -17,10 +20,7 @@ const crearReserva = async (req, res) => {
 
         const duracion = horas_alquiladas || 1;
 
-        // 1. VALIDACIÓN DE TRASLAPE (Lógica mejorada)
-        // Buscamos si existe alguna reserva activa que:
-        // - Empiece antes de que la nueva reserva termine
-        // - Y termine después de que la nueva reserva empiece
+        // 1. VALIDACIÓN DE TRASLAPE (Evita el error de conflicto de horario)
         const queryTraslape = `
             SELECT id FROM reservas 
             WHERE cancha_id = ? 
@@ -41,11 +41,11 @@ const crearReserva = async (req, res) => {
         
         if (conflicto.length > 0) {
             return res.status(400).json({ 
-                mensaje: 'La cancha ya está ocupada en el rango de horario solicitado.' 
+                mensaje: '❌ Error: Conflicto de horario en la cancha seleccionada.' 
             });
         }
 
-        // 2. VALIDACIÓN DE STOCK EN INVENTARIO
+        // 2. VALIDACIÓN DE STOCK (Basado en el inventario de FitCanchas)
         const [stock] = await conexion.query('SELECT articulo, color, cantidad_disponible FROM inventario');
         
         const balonesStock = stock.find(i => i.articulo === 'Balón')?.cantidad_disponible || 0;
@@ -63,13 +63,15 @@ const crearReserva = async (req, res) => {
         // 3. INICIO DE TRANSACCIÓN
         await conexion.beginTransaction();
 
+        // Insertamos usando el username de la sesión y el usuario_id para trazabilidad
         const queryReserva = `
             INSERT INTO reservas 
-            (nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas, balones_prestados, petos_rojos_prestados, petos_azules_prestados, metodo_pago, estado) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'activa')`;
+            (nombre_cliente, usuario_id, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas, balones_prestados, petos_rojos_prestados, petos_azules_prestados, metodo_pago, estado) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'activa')`;
         
         const [resultado] = await conexion.query(queryReserva, [
-            nombre_cliente, 
+            username, 
+            usuario_id,
             cancha_id, 
             fecha_reserva, 
             hora_inicio, 
@@ -81,15 +83,9 @@ const crearReserva = async (req, res) => {
         ]);
 
         // 4. ACTUALIZACIÓN DE INVENTARIO
-        if (balones_prestados > 0) {
-            await conexion.query("UPDATE inventario SET cantidad_disponible = cantidad_disponible - ? WHERE articulo = 'Balón'", [balones_prestados]);
-        }
-        if (petos_rojos_prestados > 0) {
-            await conexion.query("UPDATE inventario SET cantidad_disponible = cantidad_disponible - ? WHERE articulo = 'Peto' AND color = 'Rojo'", [petos_rojos_prestados]);
-        }
-        if (petos_azules_prestados > 0) {
-            await conexion.query("UPDATE inventario SET cantidad_disponible = cantidad_disponible - ? WHERE articulo = 'Peto' AND color = 'Azul'", [petos_azules_prestados]);
-        }
+        await conexion.query("UPDATE inventario SET cantidad_disponible = cantidad_disponible - ? WHERE articulo = 'Balón'", [balones_prestados || 0]);
+        await conexion.query("UPDATE inventario SET cantidad_disponible = cantidad_disponible - ? WHERE articulo = 'Peto' AND color = 'Rojo'", [petos_rojos_prestados || 0]);
+        await conexion.query("UPDATE inventario SET cantidad_disponible = cantidad_disponible - ? WHERE articulo = 'Peto' AND color = 'Azul'", [petos_azules_prestados || 0]);
 
         await conexion.commit();
         res.status(201).json({ 
@@ -134,10 +130,9 @@ const cancelarReserva = async (req, res) => {
         const reserva = reservaInfo[0];
         if (reserva.estado !== 'activa') throw new Error('La reserva ya está cancelada o finalizada');
 
-        // Cambiar estado a cancelada
         await conexion.query('UPDATE reservas SET estado = ? WHERE id = ?', ['cancelada', id]);
 
-        // Devolver artículos al inventario (usando LEAST para no exceder la cantidad_total)
+        // Devolución al inventario
         if (reserva.balones_prestados > 0) {
             await conexion.query("UPDATE inventario SET cantidad_disponible = LEAST(cantidad_total, cantidad_disponible + ?) WHERE articulo = 'Balón'", [reserva.balones_prestados]);
         }
@@ -149,7 +144,7 @@ const cancelarReserva = async (req, res) => {
         }
 
         await conexion.commit();
-        res.json({ mensaje: 'Reserva cancelada. La cancha está libre y los artículos regresaron al stock.' });
+        res.json({ mensaje: 'Reserva cancelada y artículos devueltos al inventario.' });
 
     } catch (error) {
         if (conexion) await conexion.rollback();
