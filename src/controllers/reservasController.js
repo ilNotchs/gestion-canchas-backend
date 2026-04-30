@@ -63,15 +63,14 @@ const crearReserva = async (req, res) => {
         // 3. INICIO DE TRANSACCIÓN
         await conexion.beginTransaction();
 
-        // Insertamos usando el username de la sesión y el usuario_id para trazabilidad
+        // Insertamos usando el nombre del cliente de la sesión
         const queryReserva = `
             INSERT INTO reservas 
-            (nombre_cliente, usuario_id, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas, balones_prestados, petos_rojos_prestados, petos_azules_prestados, metodo_pago, estado) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'activa')`;
+            (nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas, balones_prestados, petos_rojos_prestados, petos_azules_prestados, metodo_pago, estado) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'activa')`;
         
         const [resultado] = await conexion.query(queryReserva, [
             username, 
-            usuario_id,
             cancha_id, 
             fecha_reserva, 
             hora_inicio, 
