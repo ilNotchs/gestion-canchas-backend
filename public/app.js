@@ -113,10 +113,10 @@ function calcularTotal() {
     const selectPromo = document.getElementById('combo-promo');
     const inputBalones = document.getElementById('balones');
 
-    if (!selectCancha || !selectPromo) return;
+    if (!selectCancha || !selectPromo) return 0;
 
     const op = selectCancha.options[selectCancha.selectedIndex];
-    if (!op) return;
+    if (!op) return 0;
     const tipo = op.getAttribute('data-tipo');
     
     // Matriz de precios por tipo de cancha
@@ -133,6 +133,8 @@ function calcularTotal() {
     document.getElementById('factura-total').innerText = new Intl.NumberFormat('es-CO', {
         style: 'currency', currency: 'COP', maximumFractionDigits: 0
     }).format(total);
+
+    return total;
 }
 
 // === 3. GESTIÓN DE LA AGENDA (MÚLTIPLES RESERVAS POR CANCHA) ===
@@ -200,7 +202,8 @@ async function cargarDashboard() {
         document.getElementById('stat-ocupacion').innerText = `${perc.toFixed(0)}%`;
         document.getElementById('barra-ocupacion').style.width = `${perc}%`;
         
-        const money = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(res.length * 85000);
+        const ingresosTotales = res.reduce((acc, reserva) => acc + (reserva.total || 0), 0);
+        const money = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(ingresosTotales);
         document.getElementById('stat-ingresos').innerText = money;
         
         const b = inv.find(i => i.articulo === 'Balón');
@@ -252,7 +255,8 @@ document.getElementById('form-reserva').addEventListener('submit', async (e) => 
         balones_prestados: document.getElementById('balones').value,
         petos_rojos_prestados: document.getElementById('petos_rojos').value,
         petos_azules_prestados: document.getElementById('petos_azules').value,
-        metodo_pago: 'efectivo'
+        metodo_pago: 'efectivo',
+        total: calcularTotal()
     };
 
     const res = await fetch('/api/reservas', {
@@ -270,3 +274,9 @@ async function cancelarReserva(id) {
     await fetch(`/api/reservas/${id}/cancelar`, { method: 'PUT' });
     cargarInventario();
 }
+
+//arreglar lo de la tarifa (aparecen las promociones de 7vs7 cuando es una cancha 11vs11)
+//ademas de que el pdf no muestra el precio total, ni el detalle de lo que se alquiló (balones y petos)
+//arbitraje, promocion (cada ciertas horas un descuento)
+//registrar en vez de cuentas creadas ya en la base de datos
+//

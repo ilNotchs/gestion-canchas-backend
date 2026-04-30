@@ -3,7 +3,7 @@ const db = require('../config/db');
 const crearReserva = async (req, res) => {
     const conexion = await db.getConnection();
     try {
-        const { nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas, balones_prestados, petos_rojos_prestados, petos_azules_prestados, metodo_pago } = req.body;
+        const { nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas, balones_prestados, petos_rojos_prestados, petos_azules_prestados, metodo_pago, total } = req.body;
 
         // CORRECCIÓN APLICADA AQUÍ: Pasamos 'activa' como parámetro (?) para evitar el error de comillas
         const [conflicto] = await conexion.query(
@@ -23,8 +23,8 @@ const crearReserva = async (req, res) => {
 
         await conexion.beginTransaction();
 
-        const queryReserva = `INSERT INTO reservas (nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas, balones_prestados, petos_rojos_prestados, petos_azules_prestados, metodo_pago) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        const [resultado] = await conexion.query(queryReserva, [nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas || 1, balones_prestados || 0, petos_rojos_prestados || 0, petos_azules_prestados || 0, metodo_pago || 'efectivo']);
+        const queryReserva = `INSERT INTO reservas (nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas, balones_prestados, petos_rojos_prestados, petos_azules_prestados, metodo_pago, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        const [resultado] = await conexion.query(queryReserva, [nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas || 1, balones_prestados || 0, petos_rojos_prestados || 0, petos_azules_prestados || 0, metodo_pago || 'efectivo', total || 0]);
 
         await conexion.query("UPDATE inventario SET cantidad_disponible = cantidad_disponible - ? WHERE articulo = 'Balón'", [balones_prestados]);
         await conexion.query("UPDATE inventario SET cantidad_disponible = cantidad_disponible - ? WHERE articulo = 'Peto' AND color = 'Rojo'", [petos_rojos_prestados]);
