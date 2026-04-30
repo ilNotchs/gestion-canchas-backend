@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FitCanchas - Sistema de Gestión Deportiva</title>
+    <title>FitCanchas Premium</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Librería para generar el PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
@@ -17,199 +16,229 @@
             <div class="login-marketing">
                 <div class="login-marketing-overlay"></div>
                 <div class="login-marketing-content">
-                    <h1 class="logo-texto-login">FIT<span>CANCHAS</span></h1>
-                    <p class="tagline">Reserva tu cancha y juega sin límites.</p>
-                    <div class="marketing-list">
-                        <div class="m-item"><i class="fas fa-check-circle"></i> <span>Múltiples horarios por cancha</span></div>
-                        <div class="m-item"><i class="fas fa-check-circle"></i> <span>Control de inventario en tiempo real</span></div>
-                        <div class="m-item"><i class="fas fa-check-circle"></i> <span>Facturación electrónica en PDF</span></div>
-                    </div>
+                    <h1 class="logo-texto" style="margin-bottom:10px; text-align:left;">FIT<span>CANCHAS</span></h1>
+                    <p style="font-size: 1.1em; opacity: 0.9;">Gestión deportiva inteligente.</p>
                 </div>
             </div>
             <div class="login-form-area">
-                <div class="login-header">
-                    <h2>INICIAR SESIÓN</h2>
-                    <p>Accede a tu panel de gestión deportiva</p>
-                </div>
+                <h2>Bienvenido</h2>
+                <p>Ingresa tus credenciales para continuar</p>
                 <form id="form-login">
                     <div class="input-login-group">
-                        <i class="fas fa-user-circle"></i>
-                        <input type="text" id="user" placeholder="Nombre de usuario" required>
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="user" placeholder="Usuario" required>
                     </div>
                     <div class="input-login-group">
-                        <i class="fas fa-key"></i>
+                        <i class="fas fa-lock"></i>
                         <input type="password" id="pass" placeholder="Contraseña" required>
                     </div>
-                    <button type="submit" class="btn-entrar">Acceder al Sistema</button>
-                    <p id="error-login" style="color: #ef4444; display: none; margin-top: 15px; font-weight: bold; text-align: center;">❌ Credenciales inválidas. Reintente.</p>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Iniciar Sesión</button>
                 </form>
             </div>
         </div>
     </div>
 
     <!-- Barra lateral (Sidebar) -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h1 class="logo-texto">FIT<span>CANCHAS</span></h1>
-        </div>
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-texto">FIT<span>CANCHAS</span></div>
         
         <nav id="menu-opciones">
             <button class="menu-btn" onclick="mostrarModulo('reservar')">
-                <i class="fas fa-calendar-plus"></i> <span>Reservar</span>
+                <i class="fas fa-calendar-plus"></i> Nueva Reserva
             </button>
-            <button class="menu-btn" id="btn-nav-dashboard" onclick="mostrarModulo('dashboard')">
-                <i class="fas fa-chart-line"></i> <span>Dashboard</span>
+            <button class="menu-btn" id="btn-nav-mis-reservas" onclick="mostrarModulo('mis-reservas')">
+                <i class="fas fa-list"></i> Mis Reservas
             </button>
-            <button class="menu-btn" id="btn-nav-inventario" onclick="mostrarModulo('inventario')">
-                <i class="fas fa-boxes"></i> <span>Inventario</span>
+            <button class="menu-btn admin-only" id="btn-nav-dashboard" onclick="mostrarModulo('dashboard')">
+                <i class="fas fa-chart-pie"></i> Dashboard
+            </button>
+            <button class="menu-btn admin-only" id="btn-nav-inventario" onclick="mostrarModulo('inventario')">
+                <i class="fas fa-boxes"></i> Inventario & Canchas
             </button>
         </nav>
 
+        <div class="clock-widget">
+            <div class="clock-time" id="live-time">00:00</div>
+            <div class="clock-date" id="live-date">Cargando...</div>
+        </div>
+
         <button onclick="cerrarSesion()" class="btn-logout">
-            <i class="fas fa-power-off"></i> <span>Cerrar Sesión</span>
+            <i class="fas fa-sign-out-alt"></i> Salir
         </button>
     </aside>
 
     <!-- Contenido Principal -->
     <main class="main-content">
         
-        <!-- Módulo: Reservar -->
-        <section id="modulo-reservar" class="modulo">
-            <div class="header-modulo">
-                <h2><i class="fas fa-calendar-check"></i> Nueva Reserva</h2>
-                <p>Configura el horario y los servicios adicionales para el encuentro.</p>
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="user-greeting">
+                <span id="greeting-text">Hola,</span> <strong id="user-display-name">Usuario</strong>
             </div>
+            <div class="topbar-actions">
+                <div class="theme-switch" id="theme-toggle" title="Cambiar Tema"></div>
+                <div class="btn-icon" id="mobile-menu-btn" style="display: none;"><i class="fas fa-bars"></i></div>
+            </div>
+        </header>
 
-            <form id="form-reserva" class="form-premium">
-                <div class="input-block">
-                    <label>Nombre del Cliente</label>
-                    <input type="text" id="nombre" placeholder="Cargando usuario..." required readonly>
+        <div class="content-wrapper">
+            <!-- Módulo: Reservar -->
+            <section id="modulo-reservar" class="modulo">
+                <div class="header-modulo">
+                    <h2><i class="fas fa-calendar-check"></i> Programar Encuentro</h2>
+                    <p>Reserva una cancha, añade implementos y selecciona promos.</p>
                 </div>
 
-                <div class="fila-form">
-                    <div class="input-block">
-                        <label>Seleccionar Cancha Disponible</label>
-                        <select id="tipo-cancha" required>
-                            <!-- Se puebla dinámicamente -->
-                        </select>
-                    </div>
-                    <div class="input-block">
-                        <label>Combo o Promoción Especial</label>
-                        <select id="combo-promo">
-                            <option value="0">Tarifa de Alquiler Normal</option>
-                            <option value="10000" data-promo="11v11">⭐ PROMO 11v11 (+24 Aguas) - $10.000</option>
-                            <option value="7000" data-promo="7v7">⭐ PROMO 7v7 (+14 Aguas) - $7.000</option>
-                            <option value="20000">⭐ COMBO PREMIUM (+Snacks) - $20.000</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="fila-form">
-                    <div class="input-block">
-                        <label>Fecha del Encuentro</label>
-                        <input type="date" id="fecha" required>
-                    </div>
-                    <div class="input-block">
-                        <label>Hora de Inicio</label>
-                        <select id="hora" required>
-                            <option value="18:00:00">06:00 PM</option>
-                            <option value="19:00:00">07:00 PM</option>
-                            <option value="20:00:00">08:00 PM</option>
-                            <option value="21:00:00">09:00 PM</option>
-                        </select>
-                    </div>
-                </div>
-
-                <h3>Implementos Adicionales</h3>
-                <div class="fila-form">
-                    <div class="input-block">
-                        <label>Balones</label>
-                        <input type="number" id="balones" value="1" min="0">
-                    </div>
-                    <div class="input-block">
-                        <label>Petos Rojos</label>
-                        <input type="number" id="petos_rojos" value="11" min="0">
-                    </div>
-                    <div class="input-block">
-                        <label>Petos Azules</label>
-                        <input type="number" id="petos_azules" value="11" min="0">
-                    </div>
-                </div>
-
-                <div class="facturacion-box" id="recibo-imprimible">
-                    <div id="pdf-header" style="display:none; text-align:center;">
-                        <h1 style="color:#004d4d; font-weight: 800;">FIT CANCHAS - COMPROBANTE</h1>
-                        <p>Gestión Profesional de Espacios Deportivos</p>
-                        <hr style="margin: 20px 0; border: 1px dashed #ccc;">
-                    </div>
+                <form id="form-reserva" class="card-glass">
+                    <input type="hidden" id="nombre">
                     
-                    <div class="resumen-pago">
-                        <!-- Detalle oculto en web, visible en PDF -->
-                        <div id="detalle-alquiler-pdf" style="display:none; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <div class="fila-form">
+                        <div class="input-block">
+                            <label>Cancha Disponible</label>
+                            <select id="tipo-cancha" required></select>
                         </div>
-
-                        <div class="total-label">Total a Pagar</div>
-                        <div id="factura-total" class="total-monto">$0</div>
+                        <div class="input-block">
+                            <label>Promoción Especial</label>
+                            <select id="combo-promo">
+                                <option value="0">Tarifa Normal</option>
+                                <option value="10000" data-promo="11v11">⭐ PROMO 11v11 (+24 Aguas) - $10.000</option>
+                                <option value="7000" data-promo="7v7">⭐ PROMO 7v7 (+14 Aguas) - $7.000</option>
+                                <option value="20000">⭐ COMBO PREMIUM (+Snacks) - $20.000</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="acciones-finales">
-                        <button type="button" onclick="descargarPDF()" class="btn-pdf-pro">
-                            <i class="fas fa-file-pdf"></i> Generar PDF
-                        </button>
-                        <button type="submit" class="btn-reservar-pro">
-                            Confirmar Reserva
-                        </button>
+                    <div class="fila-form">
+                        <div class="input-block">
+                            <label>Fecha</label>
+                            <input type="date" id="fecha" required>
+                        </div>
+                        <div class="input-block">
+                            <label>Hora</label>
+                            <select id="hora" required>
+                                <option value="18:00:00">06:00 PM</option>
+                                <option value="19:00:00">07:00 PM</option>
+                                <option value="20:00:00">08:00 PM</option>
+                                <option value="21:00:00">09:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="input-block"><label>Implementos (Balones y Petos)</label></div>
+                    <div class="fila-form">
+                        <div class="input-block">
+                            <input type="number" id="balones" value="1" min="0" title="Balones">
+                        </div>
+                        <div class="input-block">
+                            <input type="number" id="petos_rojos" value="11" min="0" title="Petos Rojos">
+                        </div>
+                        <div class="input-block">
+                            <input type="number" id="petos_azules" value="11" min="0" title="Petos Azules">
+                        </div>
+                    </div>
+
+                    <div class="input-block"><label>Método de Pago</label></div>
+                    <div class="payment-methods">
+                        <label class="payment-option">
+                            <input type="radio" name="pago" value="efectivo" checked>
+                            <div class="payment-card"><i class="fas fa-money-bill-wave"></i><span>Efectivo</span></div>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="pago" value="tarjeta">
+                            <div class="payment-card"><i class="fas fa-credit-card"></i><span>Tarjeta</span></div>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="pago" value="transferencia">
+                            <div class="payment-card"><i class="fas fa-mobile-alt"></i><span>Transferencia</span></div>
+                        </label>
+                    </div>
+
+                    <div class="facturacion-box" id="recibo-imprimible">
+                        <div id="pdf-header" style="display:none; text-align:center;">
+                            <h1>FIT CANCHAS</h1><hr>
+                        </div>
+                        <div class="resumen-pago">
+                            <div id="detalle-alquiler-pdf" style="display:none;"></div>
+                            <div class="total-label">Total Estimado</div>
+                            <div id="factura-total" class="total-monto">$0</div>
+                        </div>
+                        <div class="acciones-finales">
+                            <button type="button" onclick="descargarPDF()" class="btn-secondary">
+                                <i class="fas fa-file-pdf"></i> Recibo
+                            </button>
+                            <button type="submit" class="btn-primary">Confirmar Reserva</button>
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Módulo: Mis Reservas -->
+            <section id="modulo-mis-reservas" class="modulo">
+                <div class="header-modulo">
+                    <h2><i class="fas fa-list"></i> Mis Reservas</h2>
+                    <p>Gestiona tus próximos encuentros.</p>
+                </div>
+                <div id="lista-mis-reservas" class="grid-cards">
+                    <!-- Se llena con JS -->
+                </div>
+            </section>
+
+            <!-- Módulo: Dashboard (Admin) -->
+            <section id="modulo-dashboard" class="modulo">
+                <div class="header-modulo">
+                    <h2><i class="fas fa-chart-pie"></i> Panorama General</h2>
+                    <p>Métricas financieras y operativas del día.</p>
+                </div>
+                <div class="grid-stats">
+                    <div class="card-stat">
+                        <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="stat-info">
+                            <h3>Ingresos Estimados</h3>
+                            <h2 id="stat-ingresos">$0</h2>
+                        </div>
+                    </div>
+                    <div class="card-stat">
+                        <div class="stat-icon warning"><i class="fas fa-chart-bar"></i></div>
+                        <div class="stat-info" style="width: 100%;">
+                            <h3>Ocupación Diaria</h3>
+                            <h2 id="stat-ocupacion">0%</h2>
+                            <div class="progress-container"><div id="barra-ocupacion" class="progress-bar"></div></div>
+                        </div>
+                    </div>
+                    <div class="card-stat">
+                        <div class="stat-icon success"><i class="fas fa-futbol"></i></div>
+                        <div class="stat-info">
+                            <h3>Total Reservas</h3>
+                            <h2 id="stat-total-res">0</h2>
+                        </div>
                     </div>
                 </div>
-            </form>
-        </section>
+            </section>
 
-        <!-- Módulo: Dashboard -->
-        <section id="modulo-dashboard" class="modulo" style="display:none;">
-            <div class="header-modulo">
-                <h2><i class="fas fa-chart-line"></i> Dashboard Administrativo</h2>
-                <p>Estadísticas clave de ingresos y ocupación.</p>
-            </div>
-            <div class="grid-stats">
-                <div class="card-stat">
-                    <i class="fas fa-wallet"></i>
-                    <div>
-                        <h3>Ingresos del Día</h3>
-                        <h2 id="stat-ingresos">$0</h2>
-                    </div>
+            <!-- Módulo: Inventario (Admin) -->
+            <section id="modulo-inventario" class="modulo">
+                <div class="header-modulo">
+                    <h2><i class="fas fa-boxes"></i> Inventario y Canchas</h2>
+                    <p>Control de disponibilidad e implementos.</p>
                 </div>
-                <div class="card-stat">
-                    <i class="fas fa-percent"></i>
-                    <div>
-                        <h3>Ocupación Hoy</h3>
-                        <h2 id="stat-ocupacion">0%</h2>
-                        <div class="progress-container"><div id="barra-ocupacion" class="progress-bar"></div></div>
-                    </div>
+                
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="buscador-canchas" placeholder="Buscar cancha por nombre o tipo...">
                 </div>
-                <div class="card-stat" id="alerta-stock">
-                    <i class="fas fa-futbol"></i>
-                    <div>
-                        <h3>Balones Disponibles</h3>
-                        <h2 id="stat-balones">0</h2>
-                        <p style="font-size: 11px; color: gray;">Nivel en bodega</p>
-                    </div>
-                </div>
-            </div>
-        </section>
 
-        <!-- Módulo: Inventario -->
-        <section id="modulo-inventario" class="modulo" style="display:none;">
-            <div class="header-modulo">
-                <h2><i class="fas fa-boxes"></i> Inventario y Canchas</h2>
-                <p>Estado detallado de cada instalación y equipo deportivo.</p>
-            </div>
-            <h3 class="sub-titulo">📦 Implementos Deportivos</h3>
-            <div id="lista-inventario" class="grid-cards"></div>
-            <h3 class="sub-titulo" style="margin-top:50px;">⚽ Agenda de Instalaciones</h3>
-            <div id="lista-canchas" class="grid-cards"></div>
-        </section>
+                <h3 style="margin-bottom: 15px; color: var(--text-muted);">Estado de Instalaciones</h3>
+                <div id="lista-canchas" class="grid-cards" style="margin-bottom: 40px;"></div>
 
+                <h3 style="margin-bottom: 15px; color: var(--text-muted);">Implementos en Bodega</h3>
+                <div id="lista-inventario" class="grid-cards"></div>
+            </section>
+
+        </div>
     </main>
+
+    <!-- Contenedor de Toasts -->
+    <div id="toast-container"></div>
 
     <script src="app.js"></script>
 </body>

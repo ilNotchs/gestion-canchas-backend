@@ -1,22 +1,58 @@
 /**
- * FIT CANCHAS v6.0 - THE ENGINE
+ * FIT CANCHAS v7.0 - PREMIUM EDITION
  */
 
-// === 1. ACCESO Y SEGURIDAD DE NAVEGACIÓN ===
+// === 1. TOAST NOTIFICATIONS & UI UTILS ===
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+    toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+    
+    container.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => toast.classList.add('show'), 10);
+    
+    // Remove after 3.5s
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+    }, 3500);
+}
 
+// Reloj en vivo
+setInterval(() => {
+    const now = new Date();
+    document.getElementById('live-time').innerText = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('live-date').innerText = now.toLocaleDateString('es-CO', { weekday: 'long', month: 'short', day: 'numeric' });
+}, 1000);
+
+// Saludo dinámico
+function updateGreeting() {
+    const hour = new Date().getHours();
+    let greeting = 'Buenas noches,';
+    if (hour >= 5 && hour < 12) greeting = 'Buenos días,';
+    else if (hour >= 12 && hour < 19) greeting = 'Buenas tardes,';
+    document.getElementById('greeting-text').innerText = greeting;
+}
+
+// Dark Mode Toggle
+const themeToggle = document.getElementById('theme-toggle');
+themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('fitcanchas_theme', isDark ? 'dark' : 'light');
+});
+
+// === 2. AUTH & NAVIGATION ===
 function mostrarModulo(id) {
-    const sesion = localStorage.getItem('usuario');
-    const usuario = sesion ? JSON.parse(sesion) : null;
-
-    if (id === 'dashboard' && usuario && usuario.rol !== 'admin') {
-        alert("⛔ Acceso Restringido: Solo el administrador puede visualizar las estadísticas financieras.");
-        return; 
-    }
-
     const modulos = document.querySelectorAll('.modulo');
     modulos.forEach(m => {
         m.classList.remove('activo');
-        m.style.display = 'none';
+        setTimeout(() => m.style.display = 'none', 400); // Wait for transition
     });
 
     const botones = document.querySelectorAll('.menu-btn');
@@ -24,8 +60,10 @@ function mostrarModulo(id) {
 
     const modDestino = document.getElementById(`modulo-${id}`);
     if (modDestino) {
-        modDestino.style.display = 'block';
-        setTimeout(() => modDestino.classList.add('activo'), 20);
+        setTimeout(() => {
+            modDestino.style.display = 'block';
+            setTimeout(() => modDestino.classList.add('activo'), 20);
+        }, 400);
     }
     
     const btnActivo = document.querySelector(`button[onclick*="${id}"]`);
@@ -34,6 +72,7 @@ function mostrarModulo(id) {
     if (id === 'dashboard') cargarDashboard();
     if (id === 'inventario') cargarInventario();
     if (id === 'reservar') cargarCanchasEnSelect();
+    if (id === 'mis-reservas') cargarMisReservas();
 }
 
 const formLogin = document.getElementById('form-login');
@@ -54,24 +93,25 @@ if (formLogin) {
                 localStorage.setItem('usuario', JSON.stringify(data.usuario));
                 location.reload();
             } else {
-                document.getElementById('error-login').style.display = 'block';
+                showToast('Credenciales incorrectas', 'error');
             }
-        } catch (e) { alert("Falla de comunicación con el servidor."); }
+        } catch (e) { 
+            showToast('Falla de conexión al servidor', 'error'); 
+        }
     });
 }
 
 function aplicarRoles(usuario) {
-    const btnInv = document.getElementById('btn-nav-inventario');
-    const btnDash = document.getElementById('btn-nav-dashboard');
+    document.getElementById('user-display-name').innerText = usuario.username;
+    document.getElementById('nombre').value = usuario.username;
 
+    const adminBtns = document.querySelectorAll('.admin-only');
     if (usuario.rol === 'cliente') {
-        if (btnInv) btnInv.style.display = 'none';
-        if (btnDash) btnDash.style.display = 'none';
-        mostrarModulo('reservar');
+        adminBtns.forEach(btn => btn.style.display = 'none');
+        mostrarModulo('mis-reservas');
     } else {
-        if (btnInv) btnInv.style.display = 'block';
-        if (btnDash) btnDash.style.display = 'block';
-        mostrarModulo('reservar');
+        adminBtns.forEach(btn => btn.style.display = 'flex');
+        mostrarModulo('dashboard');
     }
 }
 
@@ -80,8 +120,7 @@ function cerrarSesion() {
     location.reload();
 }
 
-// === 2. LÓGICA DE CANCHAS Y FILTRO DE PROMOCIONES ===
-
+// === 3. RESERVAS CORE ===
 async function cargarCanchasEnSelect() {
     const select = document.getElementById('tipo-cancha');
     if (!select) return;
@@ -97,7 +136,7 @@ async function cargarCanchasEnSelect() {
         `).join('');
 
         actualizarPromociones(); 
-    } catch (e) { console.error("Error al poblar canchas:", e); }
+    } catch (e) { showToast("Error al cargar canchas", "error"); }
 }
 
 function actualizarPromociones() {
@@ -110,13 +149,10 @@ function actualizarPromociones() {
 
     Array.from(selectPromo.options).forEach(opt => {
         const promoTipo = opt.getAttribute('data-promo');
-        
-        // Regla: Mostrar siempre si es normal/premium, o si coincide con el tipo de cancha
         if (!promoTipo || tipo.includes(promoTipo)) {
             opt.style.display = "block";
         } else {
             opt.style.display = "none";
-            // Si la opción seleccionada ahora está oculta, volver a "Normal"
             if (selectPromo.value === opt.value) selectPromo.value = "0";
         }
     });
@@ -127,9 +163,7 @@ function calcularTotal() {
     const selectCancha = document.getElementById('tipo-cancha');
     const selectPromo = document.getElementById('combo-promo');
     const inputBalones = document.getElementById('balones');
-    const petosR = document.getElementById('petos_rojos').value;
-    const petosA = document.getElementById('petos_azules').value;
-
+    
     if (!selectCancha || !selectPromo) return;
 
     const op = selectCancha.options[selectCancha.selectedIndex];
@@ -141,164 +175,266 @@ function calcularTotal() {
     let extraB = Math.max(0, parseInt(inputBalones.value) - 1) * 5000;
 
     const total = precioBase + extraP + extraB;
-
-    const totalFormateado = new Intl.NumberFormat('es-CO', {
-        style: 'currency', currency: 'COP', maximumFractionDigits: 0
-    }).format(total);
-
-    document.getElementById('factura-total').innerText = totalFormateado;
-
-    // Llenar detalle para el PDF
-    const detalleCont = document.getElementById('detalle-alquiler-pdf');
-    detalleCont.innerHTML = `
-        <div style="font-size:12px; color:#444;">
-            <p><strong>Cancha:</strong> ${op.text}</p>
-            <p><strong>Promoción:</strong> ${selectPromo.options[selectPromo.selectedIndex].text}</p>
-            <p><strong>Implementos:</strong> Balones (${inputBalones.value}), Petos (${parseInt(petosR) + parseInt(petosA)})</p>
-            <p><strong>Precio Base:</strong> $${precioBase.toLocaleString()}</p>
-        </div>
-    `;
+    document.getElementById('factura-total').innerText = `$${total.toLocaleString('es-CO')}`;
 }
 
-// === 3. GESTIÓN DE LA AGENDA Y DASHBOARD ===
-
-async function cargarInventario() {
-    const contInv = document.getElementById('lista-inventario');
-    const contCan = document.getElementById('lista-canchas');
-    if (!contInv || !contCan) return;
-
-    try {
-        const sesion = localStorage.getItem('usuario');
-        const user = sesion ? JSON.parse(sesion) : null;
-        const esAdmin = user && user.rol === 'admin';
-
-        const [ri, rc, rr] = await Promise.all([
-            fetch('/api/inventario'), fetch('/api/canchas'), fetch('/api/reservas/activas')
-        ]);
-        const inv = await ri.json(), can = await rc.json(), res = await rr.json();
-
-        contInv.innerHTML = inv.map(i => `
-            <div class="tarjeta-inv">
-                <h4 style="color:var(--verde-deep); margin-bottom:12px;">${i.articulo}</h4>
-                <h2 style="color:var(--verde-neon); font-size:2.8em;">${i.cantidad_disponible}</h2>
-                <p style="color:var(--slate); font-size:0.9em;">Disponibles</p>
-            </div>
-        `).join('');
-
-        contCan.innerHTML = can.map(cancha => {
-            const reservasAgenda = res.filter(r => r.cancha_id === cancha.id);
-            let agendaHTML = reservasAgenda.length > 0 ? reservasAgenda.map(reserva => `
-                <div class="reserva-item">
-                    <h5>👤 ${reserva.nombre_cliente}</h5>
-                    <p>⏰ ${reserva.hora_inicio}</p>
-                    ${esAdmin ? `<button onclick="cancelarReserva(${reserva.id})" class="btn-anular">Anular</button>` : ''}
-                </div>
-            `).join('') : '<p class="cancha-libre">✅ CANCHA LIBRE</p>';
-
-            return `
-                <div class="tarjeta-inv" style="border-top: 8px solid ${reservasAgenda.length > 0 ? 'var(--danger)' : 'var(--verde-neon)'}">
-                    <h4>${cancha.nombre}</h4>
-                    <p>${cancha.tipo}</p>
-                    ${agendaHTML}
-                </div>
-            `;
-        }).join('');
-    } catch (e) { console.error("Error Inventario:", e); }
-}
-
-async function cargarDashboard() {
-    try {
-        const [rInv, rCan, rRes] = await Promise.all([fetch('/api/inventario'), fetch('/api/canchas'), fetch('/api/reservas/activas')]);
-        const inv = await rInv.json(), can = await rCan.json(), res = await rRes.json();
-        
-        const perc = can.length === 0 ? 0 : (res.length / can.length) * 100;
-        document.getElementById('stat-ocupacion').innerText = `${perc.toFixed(0)}%`;
-        document.getElementById('barra-ocupacion').style.width = `${perc}%`;
-        
-        const totalDinero = res.length * 85000; // Estimado base
-        document.getElementById('stat-ingresos').innerText = `$${totalDinero.toLocaleString()}`;
-        
-        const b = inv.find(i => i.articulo === 'Balón');
-        document.getElementById('stat-balones').innerText = b ? b.cantidad_disponible : 0;
-    } catch (e) { console.error("Error Dashboard:", e); }
-}
-
-// === 4. SISTEMA DE EXPORTACIÓN Y EVENTOS ===
-
-function descargarPDF() {
-    const el = document.getElementById('recibo-imprimible');
-    const head = document.getElementById('pdf-header');
-    const detalle = document.getElementById('detalle-alquiler-pdf');
-    
-    head.style.display = 'block';
-    detalle.style.display = 'block';
-
-    const options = {
-        margin: 1,
-        filename: `FitCanchas_Ticket_${Date.now()}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 3 },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-
-    html2pdf().set(options).from(el).save().then(() => {
-        head.style.display = 'none';
-        detalle.style.display = 'none';
-    });
-}
-
-window.onload = () => {
-    const sesion = localStorage.getItem('usuario');
-    if (sesion) {
-        const user = JSON.parse(sesion);
-        document.getElementById('login-overlay').style.display = 'none';
-        
-        // Bloquear y autollenar nombre
-        const inputNombre = document.getElementById('nombre');
-        if (inputNombre) {
-            inputNombre.value = user.username;
-            inputNombre.readOnly = true;
-        }
-        aplicarRoles(user);
-    }
-    
-    // Listeners de cambio
-    document.getElementById('tipo-cancha')?.addEventListener('change', actualizarPromociones);
-    document.getElementById('combo-promo')?.addEventListener('change', calcularTotal);
-    ['balones', 'petos_rojos', 'petos_azules'].forEach(id => {
-        document.getElementById(id)?.addEventListener('input', calcularTotal);
-    });
-};
-
-document.getElementById('form-reserva').addEventListener('submit', async (e) => {
+document.getElementById('form-reserva')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const sesion = localStorage.getItem('usuario');
-    const user = sesion ? JSON.parse(sesion) : null;
+    const user = JSON.parse(localStorage.getItem('usuario'));
+    
+    // Método de pago radio buttons
+    const metodoPago = document.querySelector('input[name="pago"]:checked').value;
 
     const payload = {
         usuario_id: user ? user.id : 1,
-        nombre_cliente: document.getElementById('nombre').value,
+        nombre_cliente: user ? user.username : 'Cliente',
         cancha_id: document.getElementById('tipo-cancha').value,
         fecha_reserva: document.getElementById('fecha').value,
         hora_inicio: document.getElementById('hora').value,
         balones_prestados: document.getElementById('balones').value,
         petos_rojos_prestados: document.getElementById('petos_rojos').value,
         petos_azules_prestados: document.getElementById('petos_azules').value,
-        metodo_pago: 'efectivo'
+        metodo_pago: metodoPago
     };
 
-    const res = await fetch('/api/reservas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
+    const btn = document.querySelector('.btn-primary');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+    btn.disabled = true;
 
-    if (res.ok) { alert("✅ Reserva Confirmada."); location.reload(); }
-    else { alert("❌ Error: Conflicto de horario."); }
+    try {
+        const res = await fetch('/api/reservas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) { 
+            showToast("¡Reserva confirmada exitosamente!", "success");
+            setTimeout(() => {
+                btn.innerHTML = 'Confirmar Reserva';
+                btn.disabled = false;
+                mostrarModulo(user.rol === 'admin' ? 'dashboard' : 'mis-reservas');
+            }, 1500);
+        } else { 
+            const data = await res.json();
+            showToast(data.mensaje || "Error: Conflicto de horario o stock", "error"); 
+            btn.innerHTML = 'Confirmar Reserva';
+            btn.disabled = false;
+        }
+    } catch(err) {
+        showToast("Error de conexión", "error");
+        btn.innerHTML = 'Confirmar Reserva';
+        btn.disabled = false;
+    }
+});
+
+// === 4. CLIENTE: MIS RESERVAS ===
+async function cargarMisReservas() {
+    const contenedor = document.getElementById('lista-mis-reservas');
+    const user = JSON.parse(localStorage.getItem('usuario'));
+    if (!user) return;
+
+    try {
+        const res = await fetch('/api/reservas/activas');
+        const reservas = await res.json();
+        
+        // Filtrar por nombre de usuario (ya que la DB usa nombre_cliente)
+        const misReservas = reservas.filter(r => r.nombre_cliente === user.username);
+
+        if (misReservas.length === 0) {
+            contenedor.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; color: var(--text-muted);">No tienes reservas activas. ¡Anímate a programar un partido!</div>`;
+            return;
+        }
+
+        contenedor.innerHTML = misReservas.map(r => `
+            <div class="card-glass">
+                <div class="item-header">
+                    <h4>${r.nombre_cancha}</h4>
+                    <span class="badge success">Confirmada</span>
+                </div>
+                <div style="margin: 15px 0; color: var(--text-muted); font-size: 0.9em;">
+                    <p><i class="fas fa-calendar"></i> ${new Date(r.fecha_reserva).toLocaleDateString()}</p>
+                    <p><i class="fas fa-clock"></i> ${r.hora_inicio}</p>
+                    <p><i class="fas fa-futbol"></i> Balones: ${r.balones_prestados} | Petos: ${r.petos_rojos_prestados + r.petos_azules_prestados}</p>
+                </div>
+                <button onclick="cancelarReserva(${r.id})" class="btn-sm-danger" style="width: 100%; padding: 12px;">
+                    <i class="fas fa-times"></i> Cancelar Reserva
+                </button>
+            </div>
+        `).join('');
+    } catch(e) { showToast("Error al cargar reservas", "error"); }
+}
+
+// === 5. ADMIN: DASHBOARD E INVENTARIO ===
+async function cargarDashboard() {
+    try {
+        const [rCan, rRes] = await Promise.all([fetch('/api/canchas'), fetch('/api/reservas/activas')]);
+        const can = await rCan.json(), res = await rRes.json();
+        
+        const perc = can.length === 0 ? 0 : (res.length / can.length) * 100;
+        document.getElementById('stat-ocupacion').innerText = `${perc.toFixed(0)}%`;
+        document.getElementById('barra-ocupacion').style.width = `${perc}%`;
+        
+        // Ingresos: sumar basándose en el tipo de cancha asumiendo 11v11=100k, 7v7=60k
+        let totalDinero = 0;
+        res.forEach(r => {
+            totalDinero += r.nombre_cancha.includes('11v11') ? 100000 : 60000;
+        });
+        document.getElementById('stat-ingresos').innerText = `$${totalDinero.toLocaleString('es-CO')}`;
+        document.getElementById('stat-total-res').innerText = res.length;
+    } catch (e) { showToast("Error cargando dashboard", "error"); }
+}
+
+let todasLasCanchas = [];
+let todasLasReservas = [];
+
+async function cargarInventario() {
+    const contInv = document.getElementById('lista-inventario');
+    const contCan = document.getElementById('lista-canchas');
+
+    try {
+        const [ri, rc, rr] = await Promise.all([
+            fetch('/api/inventario'), fetch('/api/canchas'), fetch('/api/reservas/activas')
+        ]);
+        const inv = await ri.json();
+        todasLasCanchas = await rc.json();
+        todasLasReservas = await rr.json();
+
+        // Inventario Stats
+        contInv.innerHTML = inv.map(i => {
+            const perc = (i.cantidad_disponible / i.cantidad_total) * 100;
+            return `
+            <div class="tarjeta-item">
+                <div class="item-header">
+                    <h4>${i.articulo} ${i.color ? `(${i.color})` : ''}</h4>
+                    <span class="badge ${perc < 20 ? 'danger' : 'success'}">${i.cantidad_disponible} unid.</span>
+                </div>
+                <div style="width: 100%;">
+                    <div class="progress-container" style="height: 6px;">
+                        <div class="progress-bar" style="width: ${perc}%; background: ${perc < 20 ? 'var(--danger)' : 'var(--primary)'}"></div>
+                    </div>
+                </div>
+            </div>
+        `}).join('');
+
+        renderizarCanchasAdmin(todasLasCanchas);
+
+    } catch (e) { showToast("Error cargando inventario", "error"); }
+}
+
+function renderizarCanchasAdmin(canchasFiltradas) {
+    const contCan = document.getElementById('lista-canchas');
+    if (!contCan) return;
+
+    contCan.innerHTML = canchasFiltradas.map(cancha => {
+        const reservasAgenda = todasLasReservas.filter(r => r.cancha_id === cancha.id);
+        const estaOcupada = reservasAgenda.length > 0;
+        
+        let agendaHTML = estaOcupada ? reservasAgenda.map(r => `
+            <div class="reserva-item">
+                <div class="reserva-info">
+                    <h5>👤 ${r.nombre_cliente}</h5>
+                    <p>⏰ ${r.hora_inicio}</p>
+                </div>
+                <button onclick="cancelarReserva(${r.id})" class="btn-sm-danger"><i class="fas fa-ban"></i></button>
+            </div>
+        `).join('') : '<div class="reserva-item" style="border-left-color: var(--success);"><div class="reserva-info"><p>Libre actualmente</p></div></div>';
+
+        return `
+            <div class="tarjeta-item ${estaOcupada ? 'ocupada' : 'disponible'}">
+                <div class="item-header">
+                    <h4>${cancha.nombre}</h4>
+                    <span class="badge ${estaOcupada ? 'warning' : 'success'}">${cancha.tipo}</span>
+                </div>
+                <div style="width:100%;">
+                    ${agendaHTML}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Búsqueda de canchas
+document.getElementById('buscador-canchas')?.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    const filtradas = todasLasCanchas.filter(c => 
+        c.nombre.toLowerCase().includes(query) || 
+        c.tipo.toLowerCase().includes(query)
+    );
+    renderizarCanchasAdmin(filtradas);
 });
 
 async function cancelarReserva(id) {
-    if (!confirm("¿Deseas liberar la cancha?")) return;
-    await fetch(`/api/reservas/${id}/cancelar`, { method: 'PUT' });
-    cargarInventario();
+    if (!confirm("¿Deseas cancelar esta reserva de forma irreversible?")) return;
+    try {
+        await fetch(`/api/reservas/${id}/cancelar`, { method: 'PUT' });
+        showToast("Reserva cancelada y stock devuelto", "success");
+        
+        // Recargar la vista actual según rol
+        const user = JSON.parse(localStorage.getItem('usuario'));
+        if(user.rol === 'admin') cargarInventario();
+        else cargarMisReservas();
+    } catch(e) {
+        showToast("Error al cancelar la reserva", "error");
+    }
+}
+
+// === BOOTSTRAP ===
+window.onload = () => {
+    // Configuración de fecha mínima a hoy
+    const fechaInput = document.getElementById('fecha');
+    if (fechaInput) {
+        const today = new Date().toISOString().split('T')[0];
+        fechaInput.setAttribute('min', today);
+        fechaInput.value = today;
+    }
+
+    updateGreeting();
+
+    // Preferencia de tema
+    const savedTheme = localStorage.getItem('fitcanchas_theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+
+    const sesion = localStorage.getItem('usuario');
+    if (sesion) {
+        const user = JSON.parse(sesion);
+        document.getElementById('login-overlay').style.display = 'none';
+        aplicarRoles(user);
+    }
+    
+    // Listeners interactivos
+    document.getElementById('tipo-cancha')?.addEventListener('change', actualizarPromociones);
+    document.getElementById('combo-promo')?.addEventListener('change', calcularTotal);
+    ['balones', 'petos_rojos', 'petos_azules'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', calcularTotal);
+    });
+
+    // Mobile sidebar
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    if (mobileBtn && window.innerWidth <= 900) {
+        mobileBtn.style.display = 'flex';
+        mobileBtn.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+    }
+};
+
+function descargarPDF() {
+    showToast("Generando recibo PDF...", "success");
+    const el = document.getElementById('recibo-imprimible');
+    const head = document.getElementById('pdf-header');
+    
+    head.style.display = 'block';
+    
+    html2pdf().set({
+        margin: 1,
+        filename: `FitCanchas_Comprobante_${Date.now()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    }).from(el).save().then(() => {
+        head.style.display = 'none';
+    });
 }
