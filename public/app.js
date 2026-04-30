@@ -12,7 +12,7 @@ function mostrarModulo(id) {
     // PORTERO: Si un cliente intenta entrar al dashboard (por inspección), se le niega.
     if (id === 'dashboard' && usuario && usuario.rol !== 'admin') {
         alert("⛔ Acceso Restringido: Solo el administrador puede visualizar las estadísticas financieras.");
-        return;
+        return; 
     }
 
     // Limpieza de estados visuales
@@ -32,7 +32,7 @@ function mostrarModulo(id) {
         // Delay técnico para que el motor de renderizado de CSS aplique la transición
         setTimeout(() => modDestino.classList.add('activo'), 20);
     }
-
+    
     // Iluminación del botón en la sidebar
     const btnActivo = document.querySelector(`button[onclick*="${id}"]`);
     if (btnActivo) btnActivo.classList.add('active');
@@ -104,7 +104,7 @@ async function cargarCanchasEnSelect() {
             </option>
         `).join('');
 
-        calcularTotal();
+        calcularTotal(); 
     } catch (e) { console.error("Error al poblar el selector de canchas:", e); }
 }
 
@@ -113,15 +113,15 @@ function calcularTotal() {
     const selectPromo = document.getElementById('combo-promo');
     const inputBalones = document.getElementById('balones');
 
-    if (!selectCancha || !selectPromo) return 0;
+    if (!selectCancha || !selectPromo) return;
 
     const op = selectCancha.options[selectCancha.selectedIndex];
-    if (!op) return 0;
+    if (!op) return;
     const tipo = op.getAttribute('data-tipo');
-
+    
     // Matriz de precios por tipo de cancha
     let precioBase = tipo.includes('11v11') ? 100000 : 60000;
-
+    
     // Valor adicional de promociones
     let extraP = parseInt(selectPromo.value) || 0;
 
@@ -133,8 +133,6 @@ function calcularTotal() {
     document.getElementById('factura-total').innerText = new Intl.NumberFormat('es-CO', {
         style: 'currency', currency: 'COP', maximumFractionDigits: 0
     }).format(total);
-
-    return total;
 }
 
 // === 3. GESTIÓN DE LA AGENDA (MÚLTIPLES RESERVAS POR CANCHA) ===
@@ -166,7 +164,7 @@ async function cargarInventario() {
         // Renderización de Agenda de Canchas (USO DE FILTER PARA MOSTRAR TODO)
         contCan.innerHTML = can.map(cancha => {
             const reservasAgenda = res.filter(r => r.cancha_id === cancha.id);
-
+            
             let agendaHTML = '';
             if (reservasAgenda.length > 0) {
                 agendaHTML = reservasAgenda.map(reserva => `
@@ -197,15 +195,14 @@ async function cargarDashboard() {
     try {
         const [rInv, rCan, rRes] = await Promise.all([fetch('/api/inventario'), fetch('/api/canchas'), fetch('/api/reservas/activas')]);
         const inv = await rInv.json(), can = await rCan.json(), res = await rRes.json();
-
+        
         const perc = can.length === 0 ? 0 : (res.length / can.length) * 100;
         document.getElementById('stat-ocupacion').innerText = `${perc.toFixed(0)}%`;
         document.getElementById('barra-ocupacion').style.width = `${perc}%`;
-
-        const ingresosTotales = res.reduce((acc, reserva) => acc + (reserva.total || 0), 0);
-        const money = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(ingresosTotales);
+        
+        const money = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(res.length * 85000);
         document.getElementById('stat-ingresos').innerText = money;
-
+        
         const b = inv.find(i => i.articulo === 'Balón');
         document.getElementById('stat-balones').innerText = b ? b.cantidad_disponible : 0;
     } catch (e) { console.error("Error Dashboard:", e); }
@@ -214,7 +211,7 @@ async function cargarDashboard() {
 function descargarPDF() {
     const el = document.getElementById('recibo-imprimible');
     const head = document.getElementById('pdf-header');
-
+    
     head.style.display = 'block';
 
     const options = {
@@ -238,7 +235,7 @@ window.onload = () => {
         document.getElementById('login-overlay').style.display = 'none';
         aplicarRoles(JSON.parse(sesion));
     }
-
+    
     ['tipo-cancha', 'balones', 'combo-promo'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', calcularTotal);
@@ -255,8 +252,7 @@ document.getElementById('form-reserva').addEventListener('submit', async (e) => 
         balones_prestados: document.getElementById('balones').value,
         petos_rojos_prestados: document.getElementById('petos_rojos').value,
         petos_azules_prestados: document.getElementById('petos_azules').value,
-        metodo_pago: 'efectivo',
-        total: calcularTotal()
+        metodo_pago: 'efectivo'
     };
 
     const res = await fetch('/api/reservas', {
@@ -277,6 +273,3 @@ async function cancelarReserva(id) {
 
 //arreglar lo de la tarifa (aparecen las promociones de 7vs7 cuando es una cancha 11vs11)
 //ademas de que el pdf no muestra el precio total, ni el detalle de lo que se alquiló (balones y petos)
-//arbitraje, promocion (cada ciertas horas un descuento)
-//registrar en vez de cuentas creadas ya en la base de datos
-//
