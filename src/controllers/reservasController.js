@@ -3,9 +3,9 @@ const db = require('../config/db');
 const crearReserva = async (req, res) => {
     const conexion = await db.getConnection();
     try {
-        // Obtenemos los datos del usuario directamente del token de sesión
-        // Esto asegura que si 'Juan' está logueado, la reserva quede a su nombre
-        const { id: usuario_id, username } = req.user; 
+        // Obtenemos los datos del usuario directamente del body (ya que no hay middleware de sesión/JWT configurado)
+        const usuario_id = req.body.usuario_id || 1; 
+        const username = req.body.nombre_cliente || 'Cliente';
 
         const { 
             cancha_id, 

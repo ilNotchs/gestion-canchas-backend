@@ -272,7 +272,11 @@ window.onload = () => {
 
 document.getElementById('form-reserva').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const sesion = localStorage.getItem('usuario');
+    const user = sesion ? JSON.parse(sesion) : null;
+
     const payload = {
+        usuario_id: user ? user.id : 1,
         nombre_cliente: document.getElementById('nombre').value,
         cancha_id: document.getElementById('tipo-cancha').value,
         fecha_reserva: document.getElementById('fecha').value,
