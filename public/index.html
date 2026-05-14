@@ -91,6 +91,12 @@
             <button class="nav-item" onclick="mostrarModulo('pagos')">
                 <i class="fas fa-wallet"></i> Pagos e Historial
             </button>
+            <button class="nav-item admin-only" onclick="mostrarModulo('dashboard')" style="display:none;">
+                <i class="fas fa-chart-pie"></i> Dashboard Admin
+            </button>
+            <button class="nav-item admin-only" onclick="mostrarModulo('inventario')" style="display:none;">
+                <i class="fas fa-boxes"></i> Inventario Admin
+            </button>
             <button class="nav-item" onclick="mostrarModulo('perfil')">
                 <i class="fas fa-user"></i> Perfil
             </button>
@@ -215,13 +221,9 @@
                                     </div>
                                 </div>
                                 <div class="horarios-grid" id="grid-horarios">
-                                    <button type="button" class="btn-horario selected" data-time="18:00:00">06:00 PM</button>
-                                    <button type="button" class="btn-horario reservado" disabled>07:00 PM</button>
-                                    <button type="button" class="btn-horario" data-time="20:00:00">08:00 PM</button>
-                                    <button type="button" class="btn-horario" data-time="21:00:00">09:00 PM</button>
-                                    <button type="button" class="btn-horario" data-time="22:00:00">10:00 PM</button>
+                                    <!-- Generado por JS -->
                                 </div>
-                                <input type="hidden" id="hora-seleccionada" value="18:00:00" required>
+                                <input type="hidden" id="hora-seleccionada" value="" required>
                             </div>
 
                             <div class="input-group" style="margin-bottom: 25px;">
@@ -522,6 +524,52 @@
                             <button class="btn-outline danger" onclick="localStorage.clear(); location.reload();" style="width:auto; padding:8px 16px;">Borrar Datos</button>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <!-- ================= MÓDULO: DASHBOARD (ADMIN) ================= -->
+            <section id="modulo-dashboard" class="modulo">
+                <div class="form-header" style="margin-bottom:20px;">
+                    <div class="icon-box" style="background:var(--primary-light); color:var(--primary);"><i class="fas fa-chart-pie"></i></div>
+                    <div>
+                        <h3>Dashboard Administrativo</h3>
+                        <p>Métricas financieras y operativas del día</p>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="stat-info"><h5>Ingresos Estimados</h5><h3 id="dash-ingresos">$0</h3></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:var(--warning-light); color:var(--warning);"><i class="fas fa-chart-bar"></i></div>
+                        <div class="stat-info"><h5>Ocupación Diaria</h5><h3 id="dash-ocupacion">0%</h3></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:var(--success-light); color:var(--success);"><i class="fas fa-futbol"></i></div>
+                        <div class="stat-info"><h5>Total Reservas Activas</h5><h3 id="dash-reservas">0</h3></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= MÓDULO: INVENTARIO (ADMIN) ================= -->
+            <section id="modulo-inventario" class="modulo">
+                <div class="form-header" style="margin-bottom:20px;">
+                    <div class="icon-box" style="background:var(--success-light); color:var(--success);"><i class="fas fa-boxes"></i></div>
+                    <div>
+                        <h3>Inventario y Canchas</h3>
+                        <p>Control de disponibilidad e implementos</p>
+                    </div>
+                </div>
+                
+                <h4 style="margin-bottom:15px;">Estado de las Canchas</h4>
+                <div id="lista-canchas" class="reservas-grid" style="margin-bottom:30px;">
+                    <!-- JS rellena -->
+                </div>
+
+                <h4 style="margin-bottom:15px;">Implementos en Bodega</h4>
+                <div id="lista-inventario" class="stats-grid">
+                    <!-- JS rellena -->
                 </div>
             </section>
 

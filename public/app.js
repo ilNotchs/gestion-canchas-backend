@@ -55,6 +55,8 @@ function mostrarModulo(id) {
     if(id === 'mis-reservas') renderMisReservas();
     if(id === 'pagos') renderPagos();
     if(id === 'perfil') renderPerfil();
+    if(id === 'dashboard') renderDashboard();
+    if(id === 'inventario') renderInventario();
 }
 
 document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
@@ -86,6 +88,10 @@ function inicializarSesion() {
         const inicial = state.user.username.charAt(0).toUpperCase();
         document.getElementById('topbar-name').innerText = state.user.username;
         document.getElementById('topbar-avatar').innerText = inicial;
+
+        if (state.user.rol === 'admin') {
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
+        }
         
         cargarDatosGlobales();
     }
@@ -179,14 +185,14 @@ function setupFormReservaListeners() {
     });
 
     // Grid horarios interactivo
-    document.querySelectorAll('.btn-horario').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+    document.getElementById('grid-horarios').addEventListener('click', (e) => {
+        if(e.target.classList.contains('btn-horario')) {
             if(e.target.classList.contains('reservado')) return;
             document.querySelectorAll('.btn-horario').forEach(b => b.classList.remove('selected'));
             e.target.classList.add('selected');
             document.getElementById('hora-seleccionada').value = e.target.dataset.time;
             recalcularTotal();
-        });
+        }
     });
 }
 
@@ -194,12 +200,58 @@ function recalcularTotal() {
     const selectCancha = document.getElementById('tipo-cancha');
     if(!selectCancha.options.length) return;
     
+    const cancha_id = selectCancha.value;
     const opt = selectCancha.options[selectCancha.selectedIndex];
     const tipo = opt.dataset.tipo;
     const nombre = opt.dataset.name;
     const duracion = parseInt(document.getElementById('duracion').value) || 1;
     const promo = document.getElementById('combo-promo').value;
     const balones = parseInt(document.getElementById('val-balones').innerText) || 0;
+    const fecha = document.getElementById('fecha').value;
+
+    // Generar horas dinámicas
+    const reservasEnFecha = state.reservasActivas.filter(r => r.cancha_id == cancha_id && r.fecha_reserva.substring(0, 10) === fecha);
+    
+    const horasDisponibles = ['16:00:00', '17:00:00', '18:00:00', '19:00:00', '20:00:00', '21:00:00', '22:00:00'];
+    const gridHorarios = document.getElementById('grid-horarios');
+    
+    // Guardar la hora actualmente seleccionada si existe
+    const selAnterior = document.getElementById('hora-seleccionada').value || '18:00:00';
+    let haySeleccionadaValida = false;
+
+    gridHorarios.innerHTML = horasDisponibles.map(h => {
+        let isReservado = false;
+        const hInt = parseInt(h.split(':')[0]);
+        reservasEnFecha.forEach(r => {
+            const rStart = parseInt(r.hora_inicio.split(':')[0]);
+            const rEnd = rStart + parseInt(r.horas_alquiladas);
+            if (hInt >= rStart && hInt < rEnd) isReservado = true;
+        });
+
+        let format12 = (hInt > 12 ? hInt - 12 : hInt) + ':00 ' + (hInt >= 12 ? 'PM' : 'AM');
+        
+        let clases = 'btn-horario';
+        if (isReservado) {
+            clases += ' reservado';
+        } else if (h === selAnterior && !haySeleccionadaValida) {
+            clases += ' selected';
+            document.getElementById('hora-seleccionada').value = h;
+            haySeleccionadaValida = true;
+        }
+
+        return `<button type="button" class="${clases}" ${isReservado ? 'disabled' : ''} data-time="${h}">${format12}</button>`;
+    }).join('');
+
+    // Si la hora que estaba seleccionada ya no es válida, selecciona la primera disponible
+    if (!haySeleccionadaValida) {
+        const primerBtnDisp = gridHorarios.querySelector('.btn-horario:not(.reservado)');
+        if (primerBtnDisp) {
+            primerBtnDisp.classList.add('selected');
+            document.getElementById('hora-seleccionada').value = primerBtnDisp.dataset.time;
+        } else {
+            document.getElementById('hora-seleccionada').value = '';
+        }
+    }
     
     // Calcular costo
     let precioBase = tipo.includes('11v11') ? 100000 : 60000;
@@ -218,10 +270,14 @@ function recalcularTotal() {
     
     const fecha = document.getElementById('fecha').value;
     const horabtn = document.querySelector('.btn-horario.selected');
-    const horaTexto = horabtn ? horabtn.innerText : '06:00 PM';
+    const horaTexto = horabtn ? horabtn.innerText : 'Seleccione hora';
     
-    // Format fecha a texto lindo
-    const fechaStr = new Date(fecha + 'T00:00:00').toLocaleDateString('es-CO', {day:'numeric', month:'long', year:'numeric'});
+    // Format fecha a texto lindo usando substring
+    const fechaLimpia = fecha.substring(0, 10);
+    const [y, m, d] = fechaLimpia.split('-');
+    const fechaObj = new Date(y, m - 1, d);
+    const fechaStr = fechaObj.toLocaleDateString('es-CO', {day:'numeric', month:'long', year:'numeric'});
+    
     document.getElementById('res-fecha-hora').innerHTML = `${fechaStr}<br>${horaTexto}`;
     document.getElementById('res-duracion').innerText = `${duracion} hora${duracion>1?'s':''}`;
     
@@ -280,8 +336,12 @@ function renderMisReservas() {
     }
 
     list.innerHTML = misR.map(r => {
-        const fechaObj = new Date(r.fecha_reserva + 'T00:00:00');
-        const esHoy = fechaObj.toDateString() === new Date().toDateString();
+        const fechaLimpia = r.fecha_reserva.substring(0, 10);
+        const [y, m, d] = fechaLimpia.split('-');
+        const fechaObj = new Date(y, m - 1, d);
+        
+        const hoy = new Date();
+        const esHoy = fechaObj.toDateString() === hoy.toDateString();
         
         return `<div class="reserva-card">
             <div class="countdown">${esHoy ? '🔥 JUEGAS HOY' : '⏳ PRÓXIMAMENTE'}</div>
@@ -315,12 +375,17 @@ function renderPagos() {
     let total = 0;
     const body = document.getElementById('tabla-historial');
     body.innerHTML = misR.map(r => {
-        let precio = r.nombre_cancha.includes('11v11') ? 100000 : 60000;
+        let precio = r.nombre_cancha && r.nombre_cancha.includes('11v11') ? 100000 : 60000;
         precio *= r.horas_alquiladas;
         total += precio;
+        
+        const fechaLimpia = r.fecha_reserva.substring(0, 10);
+        const [y, m, d] = fechaLimpia.split('-');
+        const fechaObj = new Date(y, m - 1, d);
+        
         return `<tr>
-            <td>${new Date(r.fecha_reserva + 'T00:00:00').toLocaleDateString()}</td>
-            <td>${r.nombre_cancha}</td>
+            <td>${fechaObj.toLocaleDateString()}</td>
+            <td>${r.nombre_cancha || 'Cancha eliminada'}</td>
             <td><span style="text-transform:capitalize;"><i class="fas fa-money-bill" style="color:var(--text-muted); margin-right:5px;"></i>${r.metodo_pago}</span></td>
             <td class="monto-cell">${formatearDinero(precio)}</td>
             <td><span class="badge activa">Activa</span></td>
@@ -359,6 +424,66 @@ async function pedirCancelacion(id) {
             cargarDatosGlobales();
         } catch(e) { showToast("Error", "error"); }
     }
+}
+
+// === 7. ADMIN ===
+async function renderDashboard() {
+    if(state.user?.rol !== 'admin') return;
+    try {
+        const canchas = state.canchas;
+        const res = state.reservasActivas;
+        
+        const perc = canchas.length === 0 ? 0 : (res.length / canchas.length) * 100;
+        document.getElementById('dash-ocupacion').innerText = `${perc.toFixed(0)}%`;
+        
+        let totalDinero = 0;
+        res.forEach(r => {
+            let precioBase = (r.nombre_cancha && r.nombre_cancha.includes('11v11')) ? 100000 : 60000;
+            totalDinero += precioBase * r.horas_alquiladas;
+        });
+        document.getElementById('dash-ingresos').innerText = formatearDinero(totalDinero);
+        document.getElementById('dash-reservas').innerText = res.length;
+    } catch(e) { console.error(e); }
+}
+
+async function renderInventario() {
+    if(state.user?.rol !== 'admin') return;
+    try {
+        const [ri] = await Promise.all([fetch('/api/inventario')]);
+        const inv = await ri.json();
+        
+        const contInv = document.getElementById('lista-inventario');
+        contInv.innerHTML = inv.map(i => {
+            return `
+            <div class="stat-card" style="flex-direction:column; align-items:flex-start;">
+                <div style="display:flex; justify-content:space-between; width:100%;">
+                    <h5>${i.articulo} ${i.color ? `(${i.color})` : ''}</h5>
+                    <span style="font-weight:bold; color:var(--success);">${i.cantidad_disponible} unid.</span>
+                </div>
+            </div>`;
+        }).join('');
+
+        const contCan = document.getElementById('lista-canchas');
+        contCan.innerHTML = state.canchas.map(cancha => {
+            const reservasAgenda = state.reservasActivas.filter(r => r.cancha_id === cancha.id);
+            const estaOcupada = reservasAgenda.length > 0;
+            
+            let agendaHTML = estaOcupada ? reservasAgenda.map(r => `
+                <div style="background:var(--bg-app); padding:8px; border-radius:6px; margin-top:5px; display:flex; justify-content:space-between; align-items:center;">
+                    <div><span style="font-size:0.85em;">👤 ${r.nombre_cliente}</span><br><span style="font-size:0.8em; color:var(--text-muted);">⏰ ${r.hora_inicio} (${r.horas_alquiladas}h)</span></div>
+                    <button class="btn-outline danger" style="padding:4px 8px; width:auto;" onclick="pedirCancelacion(${r.id})"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('') : '<p style="font-size:0.8em; color:var(--text-muted); margin-top:5px;">Libre actualmente</p>';
+
+            return `
+                <div class="reserva-card" style="border-top: 3px solid ${estaOcupada ? 'var(--danger)' : 'var(--success)'};">
+                    <h4 style="margin-bottom:2px;">${cancha.nombre}</h4>
+                    <span class="badge ${estaOcupada ? 'cancelada' : 'activa'}" style="margin-bottom:10px; display:inline-block;">${cancha.tipo}</span>
+                    <div>${agendaHTML}</div>
+                </div>
+            `;
+        }).join('');
+    } catch(e) { console.error(e); }
 }
 
 // === BOOTSTRAP ===
