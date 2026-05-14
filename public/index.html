@@ -16,15 +16,15 @@
             <div class="login-marketing">
                 <div class="login-marketing-overlay"></div>
                 <div class="login-marketing-content">
-                    <h1 class="logo-texto" style="margin-bottom:10px; text-align:left;">FIT<span>CANCHAS</span></h1>
-                    <p style="font-size: 1.1em; opacity: 0.9;">Gestión deportiva inteligente.</p>
+                    <h1 class="logo-texto" style="margin-bottom:10px;"><i class="fas fa-futbol"></i> FITCANCHAS</h1>
+                    <p style="font-size: 1.1em; opacity: 0.9;">Tu pasión, tu cancha, en segundos.</p>
                 </div>
             </div>
             <div class="login-form-area">
                 <!-- Vista de Login -->
                 <div id="vista-login">
-                    <h2>Bienvenido</h2>
-                    <p>Ingresa tus credenciales para continuar</p>
+                    <h2>Bienvenido de nuevo</h2>
+                    <p>Ingresa tus credenciales para reservar</p>
                     <form id="form-login">
                         <div class="input-login-group">
                             <i class="fas fa-user"></i>
@@ -34,15 +34,17 @@
                             <i class="fas fa-lock"></i>
                             <input type="password" id="pass" placeholder="Contraseña" required>
                         </div>
-                        <button type="submit" class="btn-primary" style="width: 100%;">Iniciar Sesión</button>
+                        <button type="submit" class="btn-login-submit">Iniciar Sesión</button>
                     </form>
-                    <p class="auth-toggle">¿No tienes cuenta? <a href="#" id="btn-mostrar-registro">Regístrate aquí</a></p>
+                    <p style="text-align:center; margin-top:15px; color:#94a3b8; font-size:0.9em;">
+                        ¿No tienes cuenta? <a href="#" id="btn-mostrar-registro" style="color:var(--accent); font-weight:bold;">Regístrate</a>
+                    </p>
                 </div>
 
                 <!-- Vista de Registro -->
                 <div id="vista-registro" style="display: none;">
                     <h2>Crear Cuenta</h2>
-                    <p>Completa tus datos para registrarte</p>
+                    <p>Únete a la comunidad FitCanchas</p>
                     <form id="form-registro">
                         <div class="input-login-group">
                             <i class="fas fa-user"></i>
@@ -60,9 +62,11 @@
                             <i class="fas fa-lock"></i>
                             <input type="password" id="reg-pass" placeholder="Contraseña" required>
                         </div>
-                        <button type="submit" class="btn-primary" style="width: 100%;">Registrarse</button>
+                        <button type="submit" class="btn-login-submit">Registrarse</button>
                     </form>
-                    <p class="auth-toggle">¿Ya tienes cuenta? <a href="#" id="btn-mostrar-login">Inicia sesión</a></p>
+                    <p style="text-align:center; margin-top:15px; color:#94a3b8; font-size:0.9em;">
+                        ¿Ya tienes cuenta? <a href="#" id="btn-mostrar-login" style="color:var(--accent); font-weight:bold;">Inicia sesión</a>
+                    </p>
                 </div>
             </div>
         </div>
@@ -70,201 +74,455 @@
 
     <!-- Barra lateral (Sidebar) -->
     <aside class="sidebar" id="sidebar">
-        <div class="logo-texto">FIT<span>CANCHAS</span></div>
+        <div class="sidebar-header">
+            <div class="logo-texto"><i class="fas fa-futbol"></i> FITCANCHAS</div>
+        </div>
         
-        <nav id="menu-opciones">
-            <button class="menu-btn" onclick="mostrarModulo('reservar')">
+        <nav class="sidebar-nav" id="menu-opciones">
+            <button class="nav-item active" onclick="mostrarModulo('reservar')">
                 <i class="fas fa-calendar-plus"></i> Nueva Reserva
             </button>
-            <button class="menu-btn" id="btn-nav-mis-reservas" onclick="mostrarModulo('mis-reservas')">
-                <i class="fas fa-list"></i> Mis Reservas
+            <button class="nav-item" onclick="mostrarModulo('mis-reservas')">
+                <i class="fas fa-calendar-check"></i> Mis Reservas
             </button>
-            <button class="menu-btn admin-only" id="btn-nav-dashboard" onclick="mostrarModulo('dashboard')">
-                <i class="fas fa-chart-pie"></i> Dashboard
+            <button class="nav-item" onclick="mostrarModulo('promociones')">
+                <i class="fas fa-tags"></i> Promociones
             </button>
-            <button class="menu-btn admin-only" id="btn-nav-inventario" onclick="mostrarModulo('inventario')">
-                <i class="fas fa-boxes"></i> Inventario & Canchas
+            <button class="nav-item" onclick="mostrarModulo('pagos')">
+                <i class="fas fa-wallet"></i> Pagos e Historial
             </button>
+            <button class="nav-item" onclick="mostrarModulo('perfil')">
+                <i class="fas fa-user"></i> Perfil
+            </button>
+            <button class="nav-item" onclick="mostrarModulo('config')">
+                <i class="fas fa-cog"></i> Configuración
+            </button>
+
+            <div class="sidebar-promo">
+                <span class="promo-badge">20% OFF</span>
+                <h4>¡Reserva más,<br>paga menos!</h4>
+                <p>Aprovecha nuestras promociones exclusivas para ti.</p>
+                <button class="btn-promo-sm" onclick="mostrarModulo('promociones')">Ver promociones</button>
+            </div>
         </nav>
 
-        <div class="clock-widget">
-            <div class="clock-time" id="live-time">00:00</div>
-            <div class="clock-date" id="live-date">Cargando...</div>
+        <div class="sidebar-footer">
+            <button onclick="cerrarSesion()" class="btn-logout-sb">
+                <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+            </button>
+            <div class="sidebar-copyright">
+                © 2026 FitCanchas<br>Todos los derechos reservados.
+                <div class="sidebar-social">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
         </div>
-
-        <button onclick="cerrarSesion()" class="btn-logout">
-            <i class="fas fa-sign-out-alt"></i> Salir
-        </button>
     </aside>
 
     <!-- Contenido Principal -->
-    <main class="main-content">
+    <main class="main-wrapper">
         
         <!-- Topbar -->
         <header class="topbar">
-            <div class="user-greeting">
-                <span id="greeting-text">Hola,</span> <strong id="user-display-name">Usuario</strong>
+            <div class="greeting">
+                <button class="menu-toggle" id="mobile-menu-btn"><i class="fas fa-bars"></i></button>
+                <div class="greeting-text">
+                    <h2 id="greeting-text-h2">Buenas noches, <span id="user-display-name">Usuario</span> 👋</h2>
+                    <p>¿Listo para reservar tu próxima cancha?</p>
+                </div>
             </div>
             <div class="topbar-actions">
-                <div class="theme-switch" id="theme-toggle" title="Cambiar Tema"></div>
-                <div class="btn-icon" id="mobile-menu-btn" style="display: none;"><i class="fas fa-bars"></i></div>
+                <div class="btn-icon">
+                    <i class="far fa-bell"></i>
+                    <div class="notification-dot"></div>
+                </div>
+                <div class="user-profile-sm" onclick="mostrarModulo('perfil')">
+                    <div class="avatar-sm" id="topbar-avatar">U</div>
+                    <span id="topbar-name">Usuario</span>
+                    <i class="fas fa-chevron-down" style="font-size: 0.8em; color: var(--text-muted);"></i>
+                </div>
             </div>
         </header>
 
-        <div class="content-wrapper">
-            <!-- Módulo: Reservar -->
-            <section id="modulo-reservar" class="modulo">
-                <div class="header-modulo">
-                    <h2><i class="fas fa-calendar-check"></i> Programar Encuentro</h2>
-                    <p>Reserva una cancha, añade implementos y selecciona promos.</p>
+        <div class="content-area">
+            
+            <!-- ================= MÓDULO: NUEVA RESERVA ================= -->
+            <section id="modulo-reservar" class="modulo activo">
+                <div class="reserva-layout">
+                    <!-- Formulario -->
+                    <div class="card-form">
+                        <div class="form-header">
+                            <div class="icon-box"><i class="fas fa-calendar-alt"></i></div>
+                            <div>
+                                <h3>Nueva Reserva</h3>
+                                <p>Selecciona los detalles de tu encuentro</p>
+                            </div>
+                        </div>
+
+                        <form id="form-reserva">
+                            <div class="form-row">
+                                <div class="input-group">
+                                    <label>Cancha</label>
+                                    <div class="custom-select">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <select id="tipo-cancha" required></select>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Promoción</label>
+                                    <div class="custom-select">
+                                        <i class="fas fa-tag"></i>
+                                        <select id="combo-promo">
+                                            <option value="0">Tarifa Normal</option>
+                                            <option value="10000" data-promo="11v11">🔥 PROMO 11v11 (+24 Aguas) - $10.000 extra</option>
+                                            <option value="7000" data-promo="7v7">⚡ PROMO 7v7 (+14 Aguas) - $7.000 extra</option>
+                                            <option value="20000">🏆 COMBO PREMIUM (Snacks) - $20.000 extra</option>
+                                            <option value="nocturno">🌙 HORARIO NOCTURNO (-15% OFF post 9PM)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="input-group">
+                                    <label>Fecha</label>
+                                    <div class="custom-input">
+                                        <i class="far fa-calendar"></i>
+                                        <input type="date" id="fecha" required>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Duración</label>
+                                    <div class="custom-select">
+                                        <i class="far fa-clock"></i>
+                                        <select id="duracion" required>
+                                            <option value="1">1 hora</option>
+                                            <option value="2">2 horas</option>
+                                            <option value="3">3 horas</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group" style="margin-bottom: 25px;">
+                                <div class="horarios-header">
+                                    <label style="margin:0;">Selecciona la hora</label>
+                                    <div class="horarios-legend">
+                                        <div class="legend-item"><div class="legend-dot dot-disp"></div> Disponible</div>
+                                        <div class="legend-item"><div class="legend-dot dot-res"></div> Reservado</div>
+                                    </div>
+                                </div>
+                                <div class="horarios-grid" id="grid-horarios">
+                                    <button type="button" class="btn-horario selected" data-time="18:00:00">06:00 PM</button>
+                                    <button type="button" class="btn-horario reservado" disabled>07:00 PM</button>
+                                    <button type="button" class="btn-horario" data-time="20:00:00">08:00 PM</button>
+                                    <button type="button" class="btn-horario" data-time="21:00:00">09:00 PM</button>
+                                    <button type="button" class="btn-horario" data-time="22:00:00">10:00 PM</button>
+                                </div>
+                                <input type="hidden" id="hora-seleccionada" value="18:00:00" required>
+                            </div>
+
+                            <div class="input-group" style="margin-bottom: 25px;">
+                                <label>Implementos (Balones y Petos)</label>
+                                <div class="form-row" style="margin-bottom:0;">
+                                    <div class="counter-group">
+                                        <div class="counter-label"><i class="fas fa-futbol"></i> Balones</div>
+                                        <div class="counter-controls">
+                                            <button type="button" class="btn-counter" onclick="ajustarContador('balones', -1)"><i class="fas fa-minus"></i></button>
+                                            <span class="counter-val" id="val-balones">1</span>
+                                            <button type="button" class="btn-counter" onclick="ajustarContador('balones', 1)"><i class="fas fa-plus"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="counter-group">
+                                        <div class="counter-label"><i class="fas fa-tshirt"></i> Petos</div>
+                                        <div class="counter-controls">
+                                            <button type="button" class="btn-counter" onclick="ajustarContador('petos', -1)"><i class="fas fa-minus"></i></button>
+                                            <span class="counter-val" id="val-petos">11</span>
+                                            <button type="button" class="btn-counter" onclick="ajustarContador('petos', 1)"><i class="fas fa-plus"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Método de Pago</label>
+                                <div class="payment-grid">
+                                    <label class="payment-card">
+                                        <input type="radio" name="pago" value="efectivo" checked>
+                                        <i class="fas fa-money-bill-wave"></i>
+                                        <span>Efectivo</span>
+                                        <small>Paga en el lugar</small>
+                                        <div class="check-icon"><i class="fas fa-check-circle" style="font-size:1em; margin:0;"></i></div>
+                                    </label>
+                                    <label class="payment-card">
+                                        <input type="radio" name="pago" value="tarjeta">
+                                        <i class="far fa-credit-card"></i>
+                                        <span>Tarjeta</span>
+                                        <small>Débito o crédito</small>
+                                        <div class="check-icon"><i class="fas fa-check-circle" style="font-size:1em; margin:0;"></i></div>
+                                    </label>
+                                    <label class="payment-card">
+                                        <input type="radio" name="pago" value="transferencia">
+                                        <i class="fas fa-university"></i>
+                                        <span>Transferencia</span>
+                                        <small>Desde tu banco</small>
+                                        <div class="check-icon"><i class="fas fa-check-circle" style="font-size:1em; margin:0;"></i></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Resumen -->
+                    <div class="resumen-card">
+                        <h4>RESUMEN DE RESERVA</h4>
+                        <img src="https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=600&q=80" class="cancha-preview" alt="Cancha">
+                        
+                        <div class="resumen-lista">
+                            <div class="resumen-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <div class="resumen-detalle">
+                                    <h5>Cancha</h5>
+                                    <p id="res-cancha">Cancha Principal</p>
+                                </div>
+                            </div>
+                            <div class="resumen-item">
+                                <i class="far fa-calendar"></i>
+                                <div class="resumen-detalle">
+                                    <h5>Fecha y Hora</h5>
+                                    <p id="res-fecha-hora">14 de mayo de 2026<br>06:00 PM</p>
+                                </div>
+                            </div>
+                            <div class="resumen-item">
+                                <i class="far fa-clock"></i>
+                                <div class="resumen-detalle">
+                                    <h5>Duración</h5>
+                                    <p id="res-duracion">1 hora</p>
+                                </div>
+                            </div>
+                            <div class="resumen-item">
+                                <i class="fas fa-box-open"></i>
+                                <div class="resumen-detalle">
+                                    <h5>Implementos</h5>
+                                    <p id="res-implementos">1 Balón, 11 Petos</p>
+                                </div>
+                            </div>
+                            <div class="resumen-item">
+                                <i class="fas fa-tag"></i>
+                                <div class="resumen-detalle">
+                                    <h5>Promoción</h5>
+                                    <p id="res-promo">Tarifa Normal</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="resumen-total">
+                            <span>TOTAL</span>
+                            <strong id="factura-total">$0</strong>
+                        </div>
+
+                        <button type="button" class="btn-confirmar" id="btn-confirmar" onclick="enviarReserva()">
+                            Confirmar Reserva <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <div class="seguridad-pago">
+                            <i class="fas fa-lock"></i> Pago 100% seguro en la app o en la sede
+                        </div>
+                    </div>
                 </div>
 
-                <form id="form-reserva" class="card-glass">
-                    <input type="hidden" id="nombre">
-                    
-                    <div class="fila-form">
-                        <div class="input-block">
-                            <label>Cancha Disponible</label>
-                            <select id="tipo-cancha" required></select>
-                        </div>
-                        <div class="input-block">
-                            <label>Promoción Especial</label>
-                            <select id="combo-promo">
-                                <option value="0">Tarifa Normal</option>
-                                <option value="10000" data-promo="11v11">⭐ PROMO 11v11 (+24 Aguas) - $10.000</option>
-                                <option value="7000" data-promo="7v7">⭐ PROMO 7v7 (+14 Aguas) - $7.000</option>
-                                <option value="20000">⭐ COMBO PREMIUM (+Snacks) - $20.000</option>
-                            </select>
-                        </div>
+                <!-- Features Info Bar -->
+                <div class="features-bar">
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="far fa-calendar-check"></i></div>
+                        <div class="feature-text"><h5>Reserva fácil y rápida</h5><p>Tu cancha en segundos</p></div>
                     </div>
-
-                    <div class="fila-form">
-                        <div class="input-block">
-                            <label>Fecha</label>
-                            <input type="date" id="fecha" required>
-                        </div>
-                        <div class="input-block">
-                            <label>Hora</label>
-                            <select id="hora" required>
-                                <option value="18:00:00">06:00 PM</option>
-                                <option value="19:00:00">07:00 PM</option>
-                                <option value="20:00:00">08:00 PM</option>
-                                <option value="21:00:00">09:00 PM</option>
-                            </select>
-                        </div>
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div class="feature-text"><h5>Instalaciones top</h5><p>Canchas en óptimas condiciones</p></div>
                     </div>
-
-                    <div class="input-block"><label>Implementos (Balones y Petos)</label></div>
-                    <div class="fila-form">
-                        <div class="input-block">
-                            <input type="number" id="balones" value="1" min="0" title="Balones">
-                        </div>
-                        <div class="input-block">
-                            <input type="number" id="petos_rojos" value="11" min="0" title="Petos Rojos">
-                        </div>
-                        <div class="input-block">
-                            <input type="number" id="petos_azules" value="11" min="0" title="Petos Azules">
-                        </div>
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-lock"></i></div>
+                        <div class="feature-text"><h5>Pago seguro</h5><p>Tus datos están protegidos</p></div>
                     </div>
-
-                    <div class="input-block"><label>Método de Pago</label></div>
-                    <div class="payment-methods">
-                        <label class="payment-option">
-                            <input type="radio" name="pago" value="efectivo" checked>
-                            <div class="payment-card"><i class="fas fa-money-bill-wave"></i><span>Efectivo</span></div>
-                        </label>
-                        <label class="payment-option">
-                            <input type="radio" name="pago" value="tarjeta">
-                            <div class="payment-card"><i class="fas fa-credit-card"></i><span>Tarjeta</span></div>
-                        </label>
-                        <label class="payment-option">
-                            <input type="radio" name="pago" value="transferencia">
-                            <div class="payment-card"><i class="fas fa-mobile-alt"></i><span>Transferencia</span></div>
-                        </label>
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-headset"></i></div>
+                        <div class="feature-text"><h5>Soporte 24/7</h5><p>Estamos aquí para ayudarte</p></div>
                     </div>
-
-                    <div class="facturacion-box" id="recibo-imprimible">
-                        <div id="pdf-header" style="display:none; text-align:center; margin-bottom: 20px;">
-                            <h1 style="color:#059669; font-weight:900;">FIT CANCHAS</h1>
-                            <p style="color:#64748b;">Comprobante de Reserva</p>
-                            <hr style="margin: 15px 0; border: 1px dashed #e2e8f0;">
-                        </div>
-                        <div id="detalle-alquiler-pdf" style="display:none; margin-bottom: 20px;"></div>
-                        <div class="resumen-pago">
-                            <div class="total-label">Total Estimado</div>
-                            <div id="factura-total" class="total-monto">$0</div>
-                        </div>
-                        <div id="resumen-visual" style="margin-bottom: 20px;"></div>
-                        <div class="acciones-finales">
-                            <button type="button" onclick="descargarPDF()" class="btn-recibo">
-                                <i class="fas fa-file-pdf"></i> Descargar Recibo
-                            </button>
-                            <button type="submit" class="btn-primary" id="btn-confirmar"><i class="fas fa-check-circle"></i> Confirmar Reserva</button>
-                        </div>
-                    </div>
-                </form>
+                </div>
             </section>
 
-            <!-- Módulo: Mis Reservas -->
+            <!-- ================= MÓDULO: MIS RESERVAS ================= -->
             <section id="modulo-mis-reservas" class="modulo">
-                <div class="header-modulo">
-                    <h2><i class="fas fa-list"></i> Mis Reservas</h2>
-                    <p>Gestiona tus próximos encuentros.</p>
+                <div class="form-header" style="margin-bottom:20px;">
+                    <div class="icon-box" style="background:var(--primary-light); color:var(--primary);"><i class="fas fa-list"></i></div>
+                    <div>
+                        <h3>Mis Reservas Activas</h3>
+                        <p>No te pierdas tus próximos encuentros</p>
+                    </div>
                 </div>
-                <div id="lista-mis-reservas" class="grid-cards">
-                    <!-- Se llena con JS -->
+                <div id="lista-mis-reservas" class="reservas-grid">
+                    <!-- JS rellena esto -->
                 </div>
             </section>
 
-            <!-- Módulo: Dashboard (Admin) -->
-            <section id="modulo-dashboard" class="modulo">
-                <div class="header-modulo">
-                    <h2><i class="fas fa-chart-pie"></i> Panorama General</h2>
-                    <p>Métricas financieras y operativas del día.</p>
+            <!-- ================= MÓDULO: PROMOCIONES ================= -->
+            <section id="modulo-promociones" class="modulo">
+                <div class="form-header" style="margin-bottom:20px;">
+                    <div class="icon-box" style="background:var(--warning-light); color:var(--warning);"><i class="fas fa-gift"></i></div>
+                    <div>
+                        <h3>Promociones y Ofertas</h3>
+                        <p>Mejora tu experiencia al mejor precio</p>
+                    </div>
                 </div>
-                <div class="grid-stats">
-                    <div class="card-stat">
-                        <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
-                        <div class="stat-info">
-                            <h3>Ingresos Estimados</h3>
-                            <h2 id="stat-ingresos">$0</h2>
+                <div class="promos-grid">
+                    <div class="promo-card">
+                        <div class="promo-img"><i class="fas fa-tint"></i><div class="promo-discount">+24 Aguas</div></div>
+                        <div class="promo-content">
+                            <h4>PROMO 11v11</h4>
+                            <p>Lleva 24 hidratantes gratis para todo tu equipo al reservar canchas grandes.</p>
+                            <button class="btn-aplicar" onclick="mostrarModulo('reservar'); document.getElementById('combo-promo').value='10000'; document.getElementById('combo-promo').dispatchEvent(new Event('change'));">Usar oferta (+$10.000)</button>
                         </div>
                     </div>
-                    <div class="card-stat">
-                        <div class="stat-icon warning"><i class="fas fa-chart-bar"></i></div>
-                        <div class="stat-info" style="width: 100%;">
-                            <h3>Ocupación Diaria</h3>
-                            <h2 id="stat-ocupacion">0%</h2>
-                            <div class="progress-container"><div id="barra-ocupacion" class="progress-bar"></div></div>
+                    <div class="promo-card">
+                        <div class="promo-img" style="background: linear-gradient(135deg, #eab308, #ca8a04);"><i class="fas fa-cookie-bite"></i><div class="promo-discount">Snacks</div></div>
+                        <div class="promo-content">
+                            <h4>COMBO PREMIUM</h4>
+                            <p>Incluye snacks variados, bebidas energéticas y pelotas profesionales.</p>
+                            <button class="btn-aplicar" onclick="mostrarModulo('reservar'); document.getElementById('combo-promo').value='20000'; document.getElementById('combo-promo').dispatchEvent(new Event('change'));">Usar oferta (+$20.000)</button>
                         </div>
                     </div>
-                    <div class="card-stat">
-                        <div class="stat-icon success"><i class="fas fa-futbol"></i></div>
-                        <div class="stat-info">
-                            <h3>Total Reservas</h3>
-                            <h2 id="stat-total-res">0</h2>
+                    <div class="promo-card">
+                        <div class="promo-img" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);"><i class="fas fa-moon"></i><div class="promo-discount">-15% OFF</div></div>
+                        <div class="promo-content">
+                            <h4>HORARIO NOCTURNO</h4>
+                            <p>Aprovecha un 15% de descuento directo en cualquier cancha después de las 9:00 PM.</p>
+                            <button class="btn-aplicar" onclick="mostrarModulo('reservar'); document.getElementById('combo-promo').value='nocturno'; document.getElementById('combo-promo').dispatchEvent(new Event('change'));">Aplicar código Nocturno</button>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Módulo: Inventario (Admin) -->
-            <section id="modulo-inventario" class="modulo">
-                <div class="header-modulo">
-                    <h2><i class="fas fa-boxes"></i> Inventario y Canchas</h2>
-                    <p>Control de disponibilidad e implementos.</p>
+            <!-- ================= MÓDULO: PAGOS E HISTORIAL ================= -->
+            <section id="modulo-pagos" class="modulo">
+                <div class="form-header" style="margin-bottom:20px;">
+                    <div class="icon-box" style="background:var(--success-light); color:var(--success);"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <div>
+                        <h3>Historial y Pagos</h3>
+                        <p>Revisa todas tus transacciones</p>
+                    </div>
                 </div>
                 
-                <div class="search-bar">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="buscador-canchas" placeholder="Buscar cancha por nombre o tipo...">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+                        <div class="stat-info"><h5>Gastado (Est.)</h5><h3 id="stat-gastado">$0</h3></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info"><h5>Reservas Totales</h5><h3 id="stat-reservas">0</h3></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-credit-card"></i></div>
+                        <div class="stat-info"><h5>Método Favorito</h5><h3 id="stat-metodo">Efectivo</h3></div>
+                    </div>
                 </div>
 
-                <h3 style="margin-bottom: 15px; color: var(--text-muted);">Estado de Instalaciones</h3>
-                <div id="lista-canchas" class="grid-cards" style="margin-bottom: 40px;"></div>
+                <div class="table-container">
+                    <div class="table-header">
+                        <h4 style="font-weight:700;">Últimos Movimientos</h4>
+                        <div class="table-filters">
+                            <button class="filter-btn active">Todas</button>
+                        </div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead>
+                                <tr><th>Fecha</th><th>Cancha</th><th>Método</th><th>Monto</th><th>Estado</th></tr>
+                            </thead>
+                            <tbody id="tabla-historial">
+                                <!-- JS rellena -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
 
-                <h3 style="margin-bottom: 15px; color: var(--text-muted);">Implementos en Bodega</h3>
-                <div id="lista-inventario" class="grid-cards"></div>
+            <!-- ================= MÓDULO: PERFIL ================= -->
+            <section id="modulo-perfil" class="modulo">
+                <div class="perfil-layout">
+                    <div class="perfil-card">
+                        <div class="avatar-lg" id="perfil-avatar">U</div>
+                        <h3 id="perfil-nombre">Usuario</h3>
+                        <p id="perfil-email">correo@ejemplo.com</p>
+                        <div class="nivel-badge"><i class="fas fa-trophy"></i> Jugador Amateur</div>
+                        
+                        <div class="perfil-stats">
+                            <div class="p-stat"><h4>5</h4><span>Partidos</span></div>
+                            <div class="p-stat"><h4>12</h4><span>Goles (aprox)</span></div>
+                        </div>
+                    </div>
+                    <div class="logros-card">
+                        <h3>Logros Desbloqueados</h3>
+                        <div class="logros-grid">
+                            <div class="logro-item unlocked"><i class="fas fa-star logro-icon" style="color:#eab308;"></i><span>Primer Partido</span></div>
+                            <div class="logro-item unlocked"><i class="fas fa-moon logro-icon" style="color:#3b82f6;"></i><span>Búho Nocturno</span></div>
+                            <div class="logro-item"><i class="fas fa-fire logro-icon"></i><span>Racha x5</span></div>
+                            <div class="logro-item"><i class="fas fa-crown logro-icon"></i><span>Cliente VIP</span></div>
+                            <div class="logro-item"><i class="fas fa-users logro-icon"></i><span>Líder de Equipo</span></div>
+                        </div>
+                        
+                        <h3 style="margin-top:30px; margin-bottom:15px;">Información de Contacto</h3>
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label>Teléfono Registrado</label>
+                                <div class="custom-input"><i class="fas fa-phone"></i><input type="text" id="perfil-tel" readonly></div>
+                            </div>
+                            <div class="input-group">
+                                <label>Rol en Plataforma</label>
+                                <div class="custom-input"><i class="fas fa-id-badge"></i><input type="text" id="perfil-rol" readonly></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= MÓDULO: CONFIGURACIÓN ================= -->
+            <section id="modulo-config" class="modulo">
+                <div class="form-header" style="margin-bottom:20px;">
+                    <div class="icon-box" style="background:#f1f5f9; color:var(--text-muted);"><i class="fas fa-cog"></i></div>
+                    <div>
+                        <h3>Ajustes de Plataforma</h3>
+                        <p>Personaliza tu experiencia en FitCanchas</p>
+                    </div>
+                </div>
+                
+                <div class="config-grid">
+                    <div class="config-section">
+                        <h4>Apariencia y Sistema</h4>
+                        <div class="config-item">
+                            <div class="config-info"><h5>Modo Oscuro</h5><p>Cambia a una interfaz con colores oscuros.</p></div>
+                            <label class="switch"><input type="checkbox" id="toggle-dark"><span class="slider"></span></label>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-info"><h5>Notificaciones In-App</h5><p>Recibe recordatorios de tus partidos.</p></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                    </div>
+                    
+                    <div class="config-section">
+                        <h4>Preferencias de Reserva</h4>
+                        <div class="input-group" style="margin-bottom:15px;">
+                            <label>Cancha Favorita (se seleccionará por defecto)</label>
+                            <div class="custom-select"><i class="fas fa-heart"></i><select id="pref-cancha"><option>Ninguna</option></select></div>
+                        </div>
+                        <div class="config-item" style="margin-top:20px;">
+                            <div class="config-info"><h5>Limpiar Caché</h5><p>Resetea la información almacenada localmente.</p></div>
+                            <button class="btn-outline danger" onclick="localStorage.clear(); location.reload();" style="width:auto; padding:8px 16px;">Borrar Datos</button>
+                        </div>
+                    </div>
+                </div>
             </section>
 
         </div>
@@ -275,10 +533,10 @@
         <div class="modal-box">
             <div class="modal-icon"><i class="fas fa-exclamation-triangle"></i></div>
             <h3>¿Cancelar reserva?</h3>
-            <p>Esta acción es irreversible. Los implementos serán devueltos al inventario y la cancha quedará libre.</p>
-            <div class="modal-actions">
-                <button class="modal-btn modal-btn-cancel" id="modal-no">No, mantener</button>
-                <button class="modal-btn modal-btn-confirm" id="modal-si"><i class="fas fa-trash-alt"></i> Sí, cancelar</button>
+            <p>Esta acción es irreversible. La cancha quedará libre y perderás el espacio.</p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-outline" style="flex:1;" id="modal-no">Mantener</button>
+                <button class="btn-outline danger" style="flex:1; background:var(--danger); color:white;" id="modal-si"><i class="fas fa-trash-alt"></i> Cancelar</button>
             </div>
         </div>
     </div>
@@ -286,7 +544,7 @@
     <!-- Confetti -->
     <canvas id="confetti-canvas"></canvas>
 
-    <!-- Contenedor de Toasts -->
+    <!-- Toasts -->
     <div id="toast-container"></div>
 
     <script src="app.js"></script>

@@ -1,8 +1,10 @@
 /**
- * FIT CANCHAS v7.0 - PREMIUM EDITION
+ * FIT CANCHAS v8.0 - PREMIUM REDESIGN
  */
 
-// === 1. TOAST NOTIFICATIONS & UI UTILS ===
+// === 1. UTILIDADES Y GLOBALES ===
+const state = { canchas: [], reservasActivas: [], user: null };
+
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
@@ -14,17 +16,12 @@ function showToast(message, type = 'success') {
     setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 3500);
 }
 
-// Confetti celebration
 function lanzarConfetti() {
     const canvas = document.getElementById('confetti-canvas');
     const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const pieces = [];
-    const colors = ['#22c55e','#059669','#16a34a','#4ade80','#a7f3d0','#fbbf24'];
-    for (let i = 0; i < 120; i++) {
-        pieces.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height, w: Math.random()*8+4, h: Math.random()*4+2, color: colors[Math.floor(Math.random()*colors.length)], vy: Math.random()*3+2, vx: Math.random()*2-1, rot: Math.random()*360 });
-    }
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    const pieces = []; const colors = ['#22c55e','#059669','#16a34a','#4ade80','#a7f3d0','#fbbf24'];
+    for (let i = 0; i < 120; i++) pieces.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height, w: Math.random()*8+4, h: Math.random()*4+2, color: colors[Math.floor(Math.random()*colors.length)], vy: Math.random()*3+2, vx: Math.random()*2-1, rot: Math.random()*360 });
     let frame = 0;
     function draw() {
         ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -34,167 +31,63 @@ function lanzarConfetti() {
             ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
             p.y += p.vy; p.x += p.vx; p.rot += 3;
         });
-        frame++;
-        if (frame < 140) requestAnimationFrame(draw);
-        else ctx.clearRect(0,0,canvas.width,canvas.height);
+        frame++; if (frame < 140) requestAnimationFrame(draw); else ctx.clearRect(0,0,canvas.width,canvas.height);
     }
     draw();
 }
 
-// Animated counter
-function animarContador(el, target, prefix = '', suffix = '') {
-    let current = 0;
-    const step = Math.max(1, Math.ceil(target / 40));
-    const timer = setInterval(() => {
-        current += step;
-        if (current >= target) { current = target; clearInterval(timer); }
-        el.innerText = `${prefix}${current.toLocaleString('es-CO')}${suffix}`;
-    }, 30);
-}
+function formatearDinero(num) { return `$${parseInt(num).toLocaleString('es-CO')}`; }
 
-// Reloj en vivo
-setInterval(() => {
-    const now = new Date();
-    document.getElementById('live-time').innerText = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('live-date').innerText = now.toLocaleDateString('es-CO', { weekday: 'long', month: 'short', day: 'numeric' });
-}, 1000);
-
-// Saludo dinámico
-function updateGreeting() {
-    const hour = new Date().getHours();
-    let greeting = 'Buenas noches,';
-    if (hour >= 5 && hour < 12) greeting = 'Buenos días,';
-    else if (hour >= 12 && hour < 19) greeting = 'Buenas tardes,';
-    document.getElementById('greeting-text').innerText = greeting;
-}
-
-// Dark Mode Toggle
-const themeToggle = document.getElementById('theme-toggle');
-themeToggle.addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode');
-    const isDark = document.body.classList.contains('dark-mode');
-    localStorage.setItem('fitcanchas_theme', isDark ? 'dark' : 'light');
-});
-
-// === 2. AUTH & NAVIGATION ===
+// === 2. NAVEGACIÓN Y SESIÓN ===
 function mostrarModulo(id) {
-    const modulos = document.querySelectorAll('.modulo');
-    modulos.forEach(m => {
-        m.classList.remove('activo');
-        setTimeout(() => m.style.display = 'none', 400); // Wait for transition
-    });
-
-    const botones = document.querySelectorAll('.menu-btn');
-    botones.forEach(b => b.classList.remove('active'));
-
-    const modDestino = document.getElementById(`modulo-${id}`);
-    if (modDestino) {
-        setTimeout(() => {
-            modDestino.style.display = 'block';
-            setTimeout(() => modDestino.classList.add('activo'), 20);
-        }, 400);
-    }
+    document.querySelectorAll('.modulo').forEach(m => m.classList.remove('activo'));
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     
-    const btnActivo = document.querySelector(`button[onclick*="${id}"]`);
-    if (btnActivo) btnActivo.classList.add('active');
+    document.getElementById(`modulo-${id}`).classList.add('activo');
+    const btn = document.querySelector(`.nav-item[onclick="mostrarModulo('${id}')"]`);
+    if(btn) btn.classList.add('active');
 
-    if (id === 'dashboard') cargarDashboard();
-    if (id === 'inventario') cargarInventario();
-    if (id === 'reservar') cargarCanchasEnSelect();
-    if (id === 'mis-reservas') cargarMisReservas();
+    // Cerrar sidebar en movil
+    if(window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+
+    // Hooks
+    if(id === 'reservar') recalcularTotal();
+    if(id === 'mis-reservas') renderMisReservas();
+    if(id === 'pagos') renderPagos();
+    if(id === 'perfil') renderPerfil();
 }
 
-const formLogin = document.getElementById('form-login');
-if (formLogin) {
-    formLogin.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('user').value;
-        const password = document.getElementById('pass').value;
+document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+});
 
-        try {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            const data = await res.json();
-            if (data.success) {
-                localStorage.setItem('usuario', JSON.stringify(data.usuario));
-                location.reload();
-            } else {
-                showToast('Credenciales incorrectas', 'error');
-            }
-        } catch (e) { 
-            showToast('Falla de conexión al servidor', 'error'); 
+// Config Theme
+const toggleDark = document.getElementById('toggle-dark');
+if(toggleDark) {
+    toggleDark.addEventListener('change', (e) => {
+        if(e.target.checked) {
+            document.body.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('theme', 'light');
         }
     });
 }
 
-// Toggle Login <-> Registro
-document.getElementById('btn-mostrar-registro')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    document.getElementById('vista-login').style.display = 'none';
-    document.getElementById('vista-registro').style.display = 'block';
-});
-document.getElementById('btn-mostrar-login')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    document.getElementById('vista-registro').style.display = 'none';
-    document.getElementById('vista-login').style.display = 'block';
-});
-
-// Solo permitir números en el campo de teléfono
-document.getElementById('reg-telefono')?.addEventListener('input', (e) => {
-    e.target.value = e.target.value.replace(/[^0-9]/g, '');
-});
-
-// Formulario de Registro
-const formRegistro = document.getElementById('form-registro');
-if (formRegistro) {
-    formRegistro.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('reg-nombre').value;
-        const email = document.getElementById('reg-email').value;
-        const telefono = document.getElementById('reg-telefono').value;
-        const password = document.getElementById('reg-pass').value;
-
-        if (!/^[0-9]+$/.test(telefono)) {
-            showToast('El teléfono solo puede contener números', 'error');
-            return;
-        }
-
-        try {
-            const res = await fetch('/api/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, email, telefono })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast(data.mensaje, 'success');
-                // Volver a la vista de login
-                document.getElementById('vista-registro').style.display = 'none';
-                document.getElementById('vista-login').style.display = 'block';
-                formRegistro.reset();
-            } else {
-                showToast(data.mensaje, 'error');
-            }
-        } catch (e) { 
-            showToast('Error de conexión con el servidor', 'error'); 
-        }
-    });
-}
-
-function aplicarRoles(usuario) {
-    document.getElementById('user-display-name').innerText = usuario.username;
-    document.getElementById('nombre').value = usuario.username;
-
-    const adminBtns = document.querySelectorAll('.admin-only');
-    if (usuario.rol === 'cliente') {
-        adminBtns.forEach(btn => btn.style.display = 'none');
-        mostrarModulo('mis-reservas');
-    } else {
-        adminBtns.forEach(btn => btn.style.display = 'flex');
-        mostrarModulo('dashboard');
+function inicializarSesion() {
+    const sesion = localStorage.getItem('usuario');
+    if(sesion) {
+        state.user = JSON.parse(sesion);
+        document.getElementById('login-overlay').style.display = 'none';
+        
+        // Setup UI con datos del user
+        document.getElementById('user-display-name').innerText = state.user.username;
+        const inicial = state.user.username.charAt(0).toUpperCase();
+        document.getElementById('topbar-name').innerText = state.user.username;
+        document.getElementById('topbar-avatar').innerText = inicial;
+        
+        cargarDatosGlobales();
     }
 }
 
@@ -203,373 +96,276 @@ function cerrarSesion() {
     location.reload();
 }
 
-// === 3. RESERVAS CORE ===
-async function cargarCanchasEnSelect() {
-    const select = document.getElementById('tipo-cancha');
-    if (!select) return;
-
-    try {
-        const res = await fetch('/api/canchas');
-        const canchas = await res.json();
-
-        select.innerHTML = canchas.map(c => `
-            <option value="${c.id}" data-tipo="${c.tipo}">
-                ${c.nombre} (${c.tipo})
-            </option>
-        `).join('');
-
-        actualizarPromociones(); 
-    } catch (e) { showToast("Error al cargar canchas", "error"); }
-}
-
-function actualizarPromociones() {
-    const selectCancha = document.getElementById('tipo-cancha');
-    const selectPromo = document.getElementById('combo-promo');
-    if (!selectCancha || !selectPromo) return;
-
-    const opCancha = selectCancha.options[selectCancha.selectedIndex];
-    const tipo = opCancha ? opCancha.getAttribute('data-tipo') : "";
-
-    Array.from(selectPromo.options).forEach(opt => {
-        const promoTipo = opt.getAttribute('data-promo');
-        if (!promoTipo || tipo.includes(promoTipo)) {
-            opt.style.display = "block";
-        } else {
-            opt.style.display = "none";
-            if (selectPromo.value === opt.value) selectPromo.value = "0";
-        }
-    });
-    calcularTotal();
-}
-
-function calcularTotal() {
-    const selectCancha = document.getElementById('tipo-cancha');
-    const selectPromo = document.getElementById('combo-promo');
-    const inputBalones = document.getElementById('balones');
-    const petosR = document.getElementById('petos_rojos')?.value || 0;
-    const petosA = document.getElementById('petos_azules')?.value || 0;
-    
-    if (!selectCancha || !selectPromo) return;
-
-    const op = selectCancha.options[selectCancha.selectedIndex];
-    if (!op) return;
-    const tipo = op.getAttribute('data-tipo');
-    
-    let precioBase = tipo.includes('11v11') ? 100000 : 60000;
-    let extraP = parseInt(selectPromo.value) || 0;
-    let extraB = Math.max(0, parseInt(inputBalones.value) - 1) * 5000;
-
-    const total = precioBase + extraP + extraB;
-    document.getElementById('factura-total').innerText = `$${total.toLocaleString('es-CO')}`;
-
-    // Resumen visual (visible en pantalla y en el PDF)
-    const user = JSON.parse(localStorage.getItem('usuario'));
-    const horaSelect = document.getElementById('hora');
-    const horaTexto = horaSelect ? horaSelect.options[horaSelect.selectedIndex].text : '';
-    const fechaVal = document.getElementById('fecha')?.value || '';
-    const promoTexto = selectPromo.options[selectPromo.selectedIndex].text;
-
-    const resumenHTML = `
-        <div class="resumen-visual-grid">
-            <p><strong>Cliente:</strong> ${user ? user.username : 'N/A'}</p>
-            <p><strong>Cancha:</strong> ${op.text.trim()}</p>
-            <p><strong>Fecha:</strong> ${fechaVal}</p>
-            <p><strong>Hora:</strong> ${horaTexto}</p>
-            <p><strong>Balones:</strong> ${inputBalones.value}</p>
-            <p><strong>Petos:</strong> ${parseInt(petosR) + parseInt(petosA)} (R:${petosR} / A:${petosA})</p>
-            <p><strong>Promoción:</strong> ${promoTexto}</p>
-            <p><strong>Precio Base:</strong> $${precioBase.toLocaleString('es-CO')}</p>
-        </div>
-    `;
-    document.getElementById('resumen-visual').innerHTML = resumenHTML;
-
-    // Detalle oculto para el PDF (se muestra solo al generar)
-    document.getElementById('detalle-alquiler-pdf').innerHTML = resumenHTML;
-}
-
-document.getElementById('form-reserva')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const user = JSON.parse(localStorage.getItem('usuario'));
-    const metodoPago = document.querySelector('input[name="pago"]:checked').value;
-
-    const payload = {
-        usuario_id: user ? user.id : 1,
-        nombre_cliente: user ? user.username : 'Cliente',
-        cancha_id: document.getElementById('tipo-cancha').value,
-        fecha_reserva: document.getElementById('fecha').value,
-        hora_inicio: document.getElementById('hora').value,
-        balones_prestados: document.getElementById('balones').value,
-        petos_rojos_prestados: document.getElementById('petos_rojos').value,
-        petos_azules_prestados: document.getElementById('petos_azules').value,
-        metodo_pago: metodoPago
-    };
-
-    const btn = document.getElementById('btn-confirmar');
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-    btn.disabled = true;
-
-    try {
-        const res = await fetch('/api/reservas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (res.ok) { 
-            showToast("\u00a1Reserva confirmada exitosamente!", "success");
-            lanzarConfetti();
-            setTimeout(() => {
-                btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar Reserva';
-                btn.disabled = false;
-                mostrarModulo(user.rol === 'admin' ? 'dashboard' : 'mis-reservas');
-            }, 2000);
-        } else { 
-            const data = await res.json();
-            showToast(data.mensaje || "Error: Conflicto de horario o stock", "error"); 
-            btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar Reserva';
-            btn.disabled = false;
-        }
-    } catch(err) {
-        showToast("Error de conexi\u00f3n", "error");
-        btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar Reserva';
-        btn.disabled = false;
-    }
+// === 3. AUTH LOGIC ===
+document.getElementById('btn-mostrar-registro')?.addEventListener('click', (e) => {
+    e.preventDefault(); document.getElementById('vista-login').style.display = 'none'; document.getElementById('vista-registro').style.display = 'block';
+});
+document.getElementById('btn-mostrar-login')?.addEventListener('click', (e) => {
+    e.preventDefault(); document.getElementById('vista-registro').style.display = 'none'; document.getElementById('vista-login').style.display = 'block';
 });
 
-// === 4. CLIENTE: MIS RESERVAS ===
-async function cargarMisReservas() {
-    const contenedor = document.getElementById('lista-mis-reservas');
-    const user = JSON.parse(localStorage.getItem('usuario'));
-    if (!user) return;
-
+document.getElementById('form-login')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button'); btn.disabled = true; btn.innerText = "Verificando...";
     try {
-        const res = await fetch('/api/reservas/activas');
-        const reservas = await res.json();
-        
-        // Filtrar por nombre de usuario (ya que la DB usa nombre_cliente)
-        const misReservas = reservas.filter(r => r.nombre_cliente === user.username);
-
-        if (misReservas.length === 0) {
-            contenedor.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; color: var(--text-muted);">No tienes reservas activas. ¡Anímate a programar un partido!</div>`;
-            return;
-        }
-
-        contenedor.innerHTML = misReservas.map(r => `
-            <div class="card-glass">
-                <div class="item-header">
-                    <h4>${r.nombre_cancha}</h4>
-                    <span class="badge success">Confirmada</span>
-                </div>
-                <div style="margin: 15px 0; color: var(--text-muted); font-size: 0.9em;">
-                    <p><i class="fas fa-calendar"></i> ${new Date(r.fecha_reserva).toLocaleDateString()}</p>
-                    <p><i class="fas fa-clock"></i> ${r.hora_inicio}</p>
-                    <p><i class="fas fa-futbol"></i> Balones: ${r.balones_prestados} | Petos: ${r.petos_rojos_prestados + r.petos_azules_prestados}</p>
-                </div>
-                <button onclick="cancelarReserva(${r.id})" class="btn-sm-danger" style="width: 100%; padding: 12px;">
-                    <i class="fas fa-times"></i> Cancelar Reserva
-                </button>
-            </div>
-        `).join('');
-    } catch(e) { showToast("Error al cargar reservas", "error"); }
-}
-
-// === 5. ADMIN: DASHBOARD E INVENTARIO ===
-async function cargarDashboard() {
-    try {
-        const [rCan, rRes] = await Promise.all([fetch('/api/canchas'), fetch('/api/reservas/activas')]);
-        const can = await rCan.json(), res = await rRes.json();
-        
-        const perc = can.length === 0 ? 0 : (res.length / can.length) * 100;
-        animarContador(document.getElementById('stat-ocupacion'), Math.round(perc), '', '%');
-        document.getElementById('barra-ocupacion').style.width = `${perc}%`;
-        
-        let totalDinero = 0;
-        res.forEach(r => {
-            totalDinero += (r.nombre_cancha && r.nombre_cancha.includes('Sintética')) ? 60000 : 100000;
+        const res = await fetch('/api/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: document.getElementById('user').value, password: document.getElementById('pass').value })
         });
-        animarContador(document.getElementById('stat-ingresos'), totalDinero, '$');
-        animarContador(document.getElementById('stat-total-res'), res.length);
-    } catch (e) { showToast("Error cargando dashboard", "error"); }
+        const data = await res.json();
+        if(data.success) { localStorage.setItem('usuario', JSON.stringify(data.usuario)); location.reload(); }
+        else { showToast('Credenciales incorrectas', 'error'); btn.disabled = false; btn.innerText = "Iniciar Sesión"; }
+    } catch(err) { showToast('Error de servidor', 'error'); btn.disabled = false; btn.innerText = "Iniciar Sesión"; }
+});
+
+document.getElementById('form-registro')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button'); btn.disabled = true; btn.innerText = "Creando...";
+    try {
+        const res = await fetch('/api/register', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                username: document.getElementById('reg-nombre').value, email: document.getElementById('reg-email').value,
+                telefono: document.getElementById('reg-telefono').value, password: document.getElementById('reg-pass').value 
+            })
+        });
+        const data = await res.json();
+        if(data.success) { showToast(data.mensaje, 'success'); document.getElementById('btn-mostrar-login').click(); e.target.reset(); }
+        else { showToast(data.mensaje, 'error'); }
+    } catch(err) { showToast('Error', 'error'); }
+    btn.disabled = false; btn.innerText = "Registrarse";
+});
+
+// === 4. DATOS Y FORMULARIO DE RESERVA ===
+async function cargarDatosGlobales() {
+    try {
+        const [resC, resR] = await Promise.all([fetch('/api/canchas'), fetch('/api/reservas/activas')]);
+        state.canchas = await resC.json();
+        state.reservasActivas = await resR.json();
+        
+        // Poblar selects
+        const select = document.getElementById('tipo-cancha');
+        const pref = document.getElementById('pref-cancha');
+        if(select && pref) {
+            const options = state.canchas.map(c => `<option value="${c.id}" data-tipo="${c.tipo}" data-name="${c.nombre}">${c.nombre} (${c.tipo})</option>`).join('');
+            select.innerHTML = options;
+            pref.innerHTML = `<option value="none">Ninguna</option>` + options;
+        }
+        
+        setupFormReservaListeners();
+        recalcularTotal();
+        renderMisReservas();
+    } catch(e) { console.error(e); showToast("Error cargando canchas", "error"); }
 }
 
-let todasLasCanchas = [];
-let todasLasReservas = [];
+function ajustarContador(tipo, diff) {
+    const el = document.getElementById(`val-${tipo}`);
+    let val = parseInt(el.innerText) + diff;
+    if(tipo === 'balones' && val < 0) val = 0;
+    if(tipo === 'petos' && val < 0) val = 0;
+    el.innerText = val;
+    recalcularTotal();
+}
 
-async function cargarInventario() {
-    const contInv = document.getElementById('lista-inventario');
-    const contCan = document.getElementById('lista-canchas');
+function setupFormReservaListeners() {
+    // Fecha min hoy
+    const fechaInp = document.getElementById('fecha');
+    const hoy = new Date().toISOString().split('T')[0];
+    fechaInp.min = hoy; fechaInp.value = hoy;
+
+    // Listeners interactivos
+    ['tipo-cancha', 'combo-promo', 'fecha', 'duracion'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', recalcularTotal);
+    });
+
+    // Grid horarios interactivo
+    document.querySelectorAll('.btn-horario').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if(e.target.classList.contains('reservado')) return;
+            document.querySelectorAll('.btn-horario').forEach(b => b.classList.remove('selected'));
+            e.target.classList.add('selected');
+            document.getElementById('hora-seleccionada').value = e.target.dataset.time;
+            recalcularTotal();
+        });
+    });
+}
+
+function recalcularTotal() {
+    const selectCancha = document.getElementById('tipo-cancha');
+    if(!selectCancha.options.length) return;
+    
+    const opt = selectCancha.options[selectCancha.selectedIndex];
+    const tipo = opt.dataset.tipo;
+    const nombre = opt.dataset.name;
+    const duracion = parseInt(document.getElementById('duracion').value) || 1;
+    const promo = document.getElementById('combo-promo').value;
+    const balones = parseInt(document.getElementById('val-balones').innerText) || 0;
+    
+    // Calcular costo
+    let precioBase = tipo.includes('11v11') ? 100000 : 60000;
+    precioBase = precioBase * duracion;
+    
+    let extraBalones = Math.max(0, balones - 1) * 5000;
+    let extraPromo = promo === 'nocturno' ? 0 : (parseInt(promo) || 0);
+    
+    let total = precioBase + extraBalones + extraPromo;
+    if(promo === 'nocturno') total = total * 0.85; // 15% OFF
+    
+    document.getElementById('factura-total').innerText = formatearDinero(total);
+
+    // Actualizar Textos Resumen
+    document.getElementById('res-cancha').innerText = nombre;
+    
+    const fecha = document.getElementById('fecha').value;
+    const horabtn = document.querySelector('.btn-horario.selected');
+    const horaTexto = horabtn ? horabtn.innerText : '06:00 PM';
+    
+    // Format fecha a texto lindo
+    const fechaStr = new Date(fecha + 'T00:00:00').toLocaleDateString('es-CO', {day:'numeric', month:'long', year:'numeric'});
+    document.getElementById('res-fecha-hora').innerHTML = `${fechaStr}<br>${horaTexto}`;
+    document.getElementById('res-duracion').innerText = `${duracion} hora${duracion>1?'s':''}`;
+    
+    const p = document.getElementById('val-petos').innerText;
+    document.getElementById('res-implementos').innerText = `${balones} Balón${balones!==1?'es':''}, ${p} Petos`;
+    document.getElementById('res-promo').innerText = document.getElementById('combo-promo').options[document.getElementById('combo-promo').selectedIndex].text.split('-')[0].trim();
+}
+
+// Enviar Formulario
+async function enviarReserva() {
+    const btn = document.getElementById('btn-confirmar');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...'; btn.disabled = true;
 
     try {
-        const [ri, rc, rr] = await Promise.all([
-            fetch('/api/inventario'), fetch('/api/canchas'), fetch('/api/reservas/activas')
-        ]);
-        const inv = await ri.json();
-        todasLasCanchas = await rc.json();
-        todasLasReservas = await rr.json();
+        const payload = {
+            usuario_id: state.user.id || 1, nombre_cliente: state.user.username,
+            cancha_id: document.getElementById('tipo-cancha').value,
+            fecha_reserva: document.getElementById('fecha').value,
+            hora_inicio: document.getElementById('hora-seleccionada').value,
+            horas_alquiladas: document.getElementById('duracion').value,
+            balones_prestados: document.getElementById('val-balones').innerText,
+            petos_rojos_prestados: document.getElementById('val-petos').innerText,
+            petos_azules_prestados: 0,
+            metodo_pago: document.querySelector('input[name="pago"]:checked').value
+        };
 
-        // Inventario Stats
-        contInv.innerHTML = inv.map(i => {
-            const perc = (i.cantidad_disponible / i.cantidad_total) * 100;
-            return `
-            <div class="tarjeta-item">
-                <div class="item-header">
-                    <h4>${i.articulo} ${i.color ? `(${i.color})` : ''}</h4>
-                    <span class="badge ${perc < 20 ? 'danger' : 'success'}">${i.cantidad_disponible} unid.</span>
-                </div>
-                <div style="width: 100%;">
-                    <div class="progress-container" style="height: 6px;">
-                        <div class="progress-bar" style="width: ${perc}%; background: ${perc < 20 ? 'var(--danger)' : 'var(--primary)'}"></div>
-                    </div>
-                </div>
-            </div>
-        `}).join('');
+        const res = await fetch('/api/reservas', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
 
-        renderizarCanchasAdmin(todasLasCanchas);
-
-    } catch (e) { showToast("Error cargando inventario", "error"); }
+        if(res.ok) {
+            showToast("¡Reserva confirmada!", "success");
+            lanzarConfetti();
+            cargarDatosGlobales(); // recarga reservas activas
+            setTimeout(() => { btn.innerHTML = 'Confirmar Reserva <i class="fas fa-arrow-right"></i>'; btn.disabled = false; mostrarModulo('mis-reservas'); }, 2000);
+        } else {
+            const err = await res.json();
+            showToast(err.mensaje || "Conflicto de horario", "error");
+            btn.innerHTML = 'Confirmar Reserva <i class="fas fa-arrow-right"></i>'; btn.disabled = false;
+        }
+    } catch(e) { showToast("Error de conexión", "error"); btn.innerHTML = 'Confirmar Reserva <i class="fas fa-arrow-right"></i>'; btn.disabled = false; }
 }
 
-function renderizarCanchasAdmin(canchasFiltradas) {
-    const contCan = document.getElementById('lista-canchas');
-    if (!contCan) return;
+// === 5. RENDER MODULOS ===
+function renderMisReservas() {
+    const list = document.getElementById('lista-mis-reservas');
+    const misR = state.reservasActivas.filter(r => r.nombre_cliente === state.user.username && r.estado === 'activa');
+    
+    if(misR.length === 0) {
+        list.innerHTML = `<div class="empty-state">
+            <i class="far fa-calendar-times"></i><h3>Sin reservas</h3>
+            <p>¡Tu próximo gol te espera!</p>
+            <button class="btn-confirmar" style="width:auto; margin:0 auto; padding:12px 24px;" onclick="mostrarModulo('reservar')">Programar Partido</button>
+        </div>`;
+        return;
+    }
 
-    contCan.innerHTML = canchasFiltradas.map(cancha => {
-        const reservasAgenda = todasLasReservas.filter(r => r.cancha_id === cancha.id);
-        const estaOcupada = reservasAgenda.length > 0;
+    list.innerHTML = misR.map(r => {
+        const fechaObj = new Date(r.fecha_reserva + 'T00:00:00');
+        const esHoy = fechaObj.toDateString() === new Date().toDateString();
         
-        let agendaHTML = estaOcupada ? reservasAgenda.map(r => `
-            <div class="reserva-item">
-                <div class="reserva-info">
-                    <h5>👤 ${r.nombre_cliente}</h5>
-                    <p>⏰ ${r.hora_inicio}</p>
-                </div>
-                <button onclick="cancelarReserva(${r.id})" class="btn-sm-danger"><i class="fas fa-ban"></i></button>
+        return `<div class="reserva-card">
+            <div class="countdown">${esHoy ? '🔥 JUEGAS HOY' : '⏳ PRÓXIMAMENTE'}</div>
+            <div class="reserva-header" style="margin-top:15px;">
+                <h4>${r.nombre_cancha}</h4>
+                <span class="badge activa">Confirmada</span>
             </div>
-        `).join('') : '<div class="reserva-item" style="border-left-color: var(--success);"><div class="reserva-info"><p>Libre actualmente</p></div></div>';
-
-        return `
-            <div class="tarjeta-item ${estaOcupada ? 'ocupada' : 'disponible'}">
-                <div class="item-header">
-                    <h4>${cancha.nombre}</h4>
-                    <span class="badge ${estaOcupada ? 'warning' : 'success'}">${cancha.tipo}</span>
-                </div>
-                <div style="width:100%;">
-                    ${agendaHTML}
-                </div>
+            <div class="reserva-info">
+                <p><i class="far fa-calendar"></i> ${fechaObj.toLocaleDateString()}</p>
+                <p><i class="far fa-clock"></i> ${r.hora_inicio} (${r.horas_alquiladas}h)</p>
+                <p><i class="fas fa-futbol"></i> Balones: ${r.balones_prestados} | Petos: ${r.petos_rojos_prestados}</p>
             </div>
-        `;
+            <div class="reserva-actions">
+                <button class="btn-outline" onclick="compartirReserva('${r.nombre_cancha}', '${fechaObj.toLocaleDateString()}', '${r.hora_inicio}')"><i class="fas fa-share-alt"></i></button>
+                <button class="btn-outline danger" onclick="pedirCancelacion(${r.id})"><i class="fas fa-times"></i> Cancelar</button>
+            </div>
+        </div>`;
     }).join('');
 }
 
-// Búsqueda de canchas
-document.getElementById('buscador-canchas')?.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase();
-    const filtradas = todasLasCanchas.filter(c => 
-        c.nombre.toLowerCase().includes(query) || 
-        c.tipo.toLowerCase().includes(query)
-    );
-    renderizarCanchasAdmin(filtradas);
-});
+function compartirReserva(cancha, fecha, hora) {
+    const texto = `¡Tengo cancha en FitCanchas! 🏟️ Jugaré en ${cancha} el ${fecha} a las ${hora}. ¡Allá nos vemos!`;
+    navigator.clipboard.writeText(texto).then(() => showToast("Copiado al portapapeles", "success"));
+}
 
-// Modal de cancelación personalizado
+function renderPagos() {
+    const misR = state.reservasActivas.filter(r => r.nombre_cliente === state.user.username);
+    // Para simplificar, asumimos que reservas activas incluye todo en este mock, o que el endpoint fue ajustado. 
+    // Usaremos lo que hay.
+    
+    let total = 0;
+    const body = document.getElementById('tabla-historial');
+    body.innerHTML = misR.map(r => {
+        let precio = r.nombre_cancha.includes('11v11') ? 100000 : 60000;
+        precio *= r.horas_alquiladas;
+        total += precio;
+        return `<tr>
+            <td>${new Date(r.fecha_reserva + 'T00:00:00').toLocaleDateString()}</td>
+            <td>${r.nombre_cancha}</td>
+            <td><span style="text-transform:capitalize;"><i class="fas fa-money-bill" style="color:var(--text-muted); margin-right:5px;"></i>${r.metodo_pago}</span></td>
+            <td class="monto-cell">${formatearDinero(precio)}</td>
+            <td><span class="badge activa">Activa</span></td>
+        </tr>`;
+    }).join('');
+
+    if(misR.length === 0) body.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay transacciones recientes</td></tr>';
+
+    document.getElementById('stat-gastado').innerText = formatearDinero(total);
+    document.getElementById('stat-reservas').innerText = misR.length;
+}
+
+function renderPerfil() {
+    document.getElementById('perfil-nombre').innerText = state.user.username;
+    document.getElementById('perfil-email').innerText = state.user.email;
+    document.getElementById('perfil-tel').value = state.user.telefono || "No registrado";
+    document.getElementById('perfil-rol').value = state.user.rol.toUpperCase();
+    document.getElementById('perfil-avatar').innerText = state.user.username.charAt(0).toUpperCase();
+}
+
+// === 6. MODAL Y CANCELACIÓN ===
 function mostrarModalCancelar() {
-    return new Promise((resolve) => {
-        const modal = document.getElementById('modal-cancelar');
-        modal.classList.add('visible');
-
-        const btnSi = document.getElementById('modal-si');
-        const btnNo = document.getElementById('modal-no');
-
-        function limpiar() {
-            modal.classList.remove('visible');
-            btnSi.replaceWith(btnSi.cloneNode(true));
-            btnNo.replaceWith(btnNo.cloneNode(true));
-        }
-
-        btnSi.addEventListener('click', () => { limpiar(); resolve(true); }, { once: true });
-        btnNo.addEventListener('click', () => { limpiar(); resolve(false); }, { once: true });
-        modal.addEventListener('click', (e) => { if (e.target === modal) { limpiar(); resolve(false); } }, { once: true });
+    return new Promise(resolve => {
+        const modal = document.getElementById('modal-cancelar'); modal.classList.add('visible');
+        const btnSi = document.getElementById('modal-si'), btnNo = document.getElementById('modal-no');
+        const cleanup = (v) => { modal.classList.remove('visible'); resolve(v); };
+        btnSi.onclick = () => cleanup(true); btnNo.onclick = () => cleanup(false);
     });
 }
 
-async function cancelarReserva(id) {
-    const confirmado = await mostrarModalCancelar();
-    if (!confirmado) return;
-
-    try {
-        await fetch(`/api/reservas/${id}/cancelar`, { method: 'PUT' });
-        showToast("Reserva cancelada y stock devuelto", "success");
-        
-        const user = JSON.parse(localStorage.getItem('usuario'));
-        if(user.rol === 'admin') cargarInventario();
-        else cargarMisReservas();
-    } catch(e) {
-        showToast("Error al cancelar la reserva", "error");
+async function pedirCancelacion(id) {
+    if(await mostrarModalCancelar()) {
+        try {
+            await fetch(`/api/reservas/${id}/cancelar`, { method: 'PUT' });
+            showToast("Reserva cancelada", "success");
+            cargarDatosGlobales();
+        } catch(e) { showToast("Error", "error"); }
     }
 }
 
 // === BOOTSTRAP ===
 window.onload = () => {
-    // Configuración de fecha mínima a hoy
-    const fechaInput = document.getElementById('fecha');
-    if (fechaInput) {
-        const today = new Date().toISOString().split('T')[0];
-        fechaInput.setAttribute('min', today);
-        fechaInput.value = today;
-    }
-
-    updateGreeting();
-
-    // Preferencia de tema
-    const savedTheme = localStorage.getItem('fitcanchas_theme');
-    if (savedTheme === 'dark') {
+    if(localStorage.getItem('theme') === 'dark') {
         document.body.classList.add('dark-mode');
+        const td = document.getElementById('toggle-dark'); if(td) td.checked = true;
     }
-
-    const sesion = localStorage.getItem('usuario');
-    if (sesion) {
-        const user = JSON.parse(sesion);
-        document.getElementById('login-overlay').style.display = 'none';
-        aplicarRoles(user);
-    }
-    
-    // Listeners interactivos
-    document.getElementById('tipo-cancha')?.addEventListener('change', actualizarPromociones);
-    document.getElementById('combo-promo')?.addEventListener('change', calcularTotal);
-    ['balones', 'petos_rojos', 'petos_azules'].forEach(id => {
-        document.getElementById(id)?.addEventListener('input', calcularTotal);
-    });
-
-    // Mobile sidebar
-    const mobileBtn = document.getElementById('mobile-menu-btn');
-    if (mobileBtn && window.innerWidth <= 900) {
-        mobileBtn.style.display = 'flex';
-        mobileBtn.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.toggle('open');
-        });
-    }
+    inicializarSesion();
 };
-
-function descargarPDF() {
-    // Aseguramos que calcularTotal actualice el detalle antes de generar
-    calcularTotal();
-
-    showToast("Generando recibo PDF...", "success");
-    const el = document.getElementById('recibo-imprimible');
-    const head = document.getElementById('pdf-header');
-    const detalle = document.getElementById('detalle-alquiler-pdf');
-    
-    head.style.display = 'block';
-    detalle.style.display = 'block';
-    
-    html2pdf().set({
-        margin: 0.75,
-        filename: `FitCanchas_Comprobante_${Date.now()}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    }).from(el).save().then(() => {
-        head.style.display = 'none';
-        detalle.style.display = 'none';
-    });
-}
