@@ -268,7 +268,6 @@ function recalcularTotal() {
     // Actualizar Textos Resumen
     document.getElementById('res-cancha').innerText = nombre;
     
-    const fecha = document.getElementById('fecha').value;
     const horabtn = document.querySelector('.btn-horario.selected');
     const horaTexto = horabtn ? horabtn.innerText : 'Seleccione hora';
     
