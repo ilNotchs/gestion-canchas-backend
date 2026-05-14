@@ -51,21 +51,18 @@ const register = async (req, res) => {
 
     try {
         // Asegurar que las columnas email y telefono existan en la tabla
-        // (esto solo se ejecuta si aún no las has agregado manualmente)
-        await db.query(`
-            ALTER TABLE usuarios 
-            ADD COLUMN IF NOT EXISTS email VARCHAR(100),
-            ADD COLUMN IF NOT EXISTS telefono VARCHAR(20)
-        `).catch(() => {}); // Ignorar si ya existen o si la sintaxis no es soportada
+        // MySQL no soporta IF NOT EXISTS, así que usamos try/catch individual
+        try { await db.query('ALTER TABLE usuarios ADD COLUMN email VARCHAR(100)'); } catch(e) { /* ya existe */ }
+        try { await db.query('ALTER TABLE usuarios ADD COLUMN telefono VARCHAR(20)'); } catch(e) { /* ya existe */ }
 
         // Verificar si el usuario o email ya existe
         const [existente] = await db.query(
-            'SELECT id FROM usuarios WHERE username = ? OR email = ?',
-            [username, email]
+            'SELECT id FROM usuarios WHERE username = ?',
+            [username]
         );
 
         if (existente.length > 0) {
-            return res.status(409).json({ success: false, mensaje: 'El usuario o correo ya está registrado.' });
+            return res.status(409).json({ success: false, mensaje: 'El nombre de usuario ya está registrado.' });
         }
 
         // Insertar nuevo usuario con rol 'cliente'
