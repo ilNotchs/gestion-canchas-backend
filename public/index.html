@@ -270,6 +270,19 @@
         </div>
     </main>
 
+    <!-- Modal de Cancelación -->
+    <div id="modal-cancelar" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3>¿Cancelar reserva?</h3>
+            <p>Esta acción es irreversible. Los implementos serán devueltos al inventario y la cancha quedará libre.</p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" id="modal-no">No, mantener</button>
+                <button class="modal-btn modal-btn-confirm" id="modal-si"><i class="fas fa-trash-alt"></i> Sí, cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Confetti -->
     <canvas id="confetti-canvas"></canvas>
 

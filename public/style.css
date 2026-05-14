@@ -4,49 +4,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
 
 :root {
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --primary-light: #eef2ff;
-    --accent: #06b6d4;
-    --bg-app: #f1f5f9;
+    --primary: #16a34a;
+    --primary-hover: #15803d;
+    --primary-light: #dcfce7;
+    --accent: #059669;
+    --bg-app: #f0fdf4;
     --surface: #ffffff;
-    --surface-glass: rgba(255,255,255,0.82);
-    --text-main: #0f172a;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --danger: #ef4444;
+    --surface-glass: rgba(255,255,255,0.85);
+    --text-main: #14532d;
+    --text-muted: #4b5563;
+    --border: #d1fae5;
+    --danger: #dc2626;
     --danger-light: #fef2f2;
-    --success: #10b981;
-    --success-light: #ecfdf5;
-    --warning: #f59e0b;
-    --sidebar-bg: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+    --success: #22c55e;
+    --success-light: #f0fdf4;
+    --warning: #eab308;
+    --sidebar-bg: linear-gradient(135deg, #14532d 0%, #166534 50%, #14532d 100%);
     --sidebar-text: #ffffff;
     --sidebar-btn-hover: rgba(255,255,255,0.12);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
-    --shadow-lg: 0 12px 32px rgba(0,0,0,0.08);
-    --gradient: linear-gradient(135deg, #6366f1, #06b6d4);
+    --shadow-sm: 0 1px 3px rgba(20,83,45,0.06);
+    --shadow-md: 0 4px 12px rgba(20,83,45,0.08);
+    --shadow-lg: 0 12px 32px rgba(20,83,45,0.1);
+    --gradient: linear-gradient(135deg, #22c55e, #059669);
 }
 
 .dark-mode {
-    --primary: #818cf8;
-    --primary-hover: #a5b4fc;
-    --primary-light: rgba(129,140,248,0.12);
-    --accent: #22d3ee;
-    --bg-app: #0f172a;
-    --surface: #1e293b;
-    --surface-glass: rgba(30,41,59,0.82);
-    --text-main: #f1f5f9;
-    --text-muted: #94a3b8;
-    --border: #334155;
+    --primary: #4ade80;
+    --primary-hover: #86efac;
+    --primary-light: rgba(74,222,128,0.12);
+    --accent: #34d399;
+    --bg-app: #0c1a12;
+    --surface: #162416;
+    --surface-glass: rgba(22,36,22,0.85);
+    --text-main: #ecfdf5;
+    --text-muted: #86efac;
+    --border: #1e3a2a;
     --danger: #f87171;
     --danger-light: rgba(248,113,113,0.12);
-    --success: #34d399;
-    --success-light: rgba(52,211,153,0.12);
-    --sidebar-bg: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.25);
-    --shadow-lg: 0 12px 32px rgba(0,0,0,0.35);
+    --success: #4ade80;
+    --success-light: rgba(74,222,128,0.12);
+    --sidebar-bg: linear-gradient(135deg, #0c1a12 0%, #14532d 50%, #0c1a12 100%);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+    --shadow-lg: 0 12px 32px rgba(0,0,0,0.4);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -331,29 +331,29 @@ input:focus, select:focus { outline: none; border-color: var(--primary); backgro
 /* =========================================================
    LOGIN
 ========================================================= */
-#login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f0d1a; z-index: 2000; display: flex; align-items: center; justify-content: center; }
+#login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #052e16; z-index: 2000; display: flex; align-items: center; justify-content: center; }
 
 #login-container {
     width: 92%; max-width: 960px; min-height: 560px;
-    background: #1a1830; display: flex; border-radius: 24px; overflow: hidden;
+    background: #14532d; display: flex; border-radius: 24px; overflow: hidden;
     box-shadow: 0 25px 60px rgba(0,0,0,0.5);
 }
 .login-marketing {
     flex: 1.2; position: relative; padding: 40px; display: flex; align-items: flex-end;
     background: url('https://images.unsplash.com/photo-1518605368461-1e1e38ce8058?q=80&w=1000&auto=format&fit=crop') center/cover;
 }
-.login-marketing-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, #1a1830 5%, rgba(26,24,48,0.3)); }
+.login-marketing-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, #14532d 5%, rgba(20,83,45,0.3)); }
 .login-marketing-content { position: relative; z-index: 1; color: white; }
 
-.login-form-area { flex: 1; padding: 50px 45px; background: #1a1830; color: white; display: flex; flex-direction: column; justify-content: center; overflow-y: auto; }
+.login-form-area { flex: 1; padding: 50px 45px; background: #14532d; color: white; display: flex; flex-direction: column; justify-content: center; overflow-y: auto; }
 .login-form-area h2 { font-size: 1.8em; margin-bottom: 4px; font-weight: 800; }
-.login-form-area > div > p:first-of-type { color: #94a3b8; margin-bottom: 24px; font-size: 0.95em; }
+.login-form-area > div > p:first-of-type { color: #86efac; margin-bottom: 24px; font-size: 0.95em; }
 
 .input-login-group { position: relative; margin-bottom: 16px; }
 .input-login-group i { position: absolute; left: 14px; top: 14px; color: var(--primary); font-size: 0.95em; }
-.input-login-group input { padding: 12px 12px 12px 42px; background: #0f0d1a; border: 1.5px solid #2d2b50; color: white; font-size: 0.95em; }
-.input-login-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
-.input-login-group input::placeholder { color: #64607a; }
+.input-login-group input { padding: 12px 12px 12px 42px; background: #052e16; border: 1.5px solid #1e3a2a; color: white; font-size: 0.95em; }
+.input-login-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(74,222,128,0.15); }
+.input-login-group input::placeholder { color: #4ade8066; }
 
 .auth-toggle { text-align: center; margin-top: 18px; color: #94a3b8; font-size: 0.88em; }
 .auth-toggle a { color: var(--primary); text-decoration: none; font-weight: 700; }
@@ -401,6 +401,46 @@ input:focus, select:focus { outline: none; border-color: var(--primary); backgro
 .theme-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
 .dark-mode .theme-switch { background: var(--primary); }
 .dark-mode .theme-switch::after { transform: translateX(24px); }
+
+/* =========================================================
+   MODAL DE CANCELACIÓN
+========================================================= */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+    z-index: 9990; display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+}
+.modal-overlay.visible { opacity: 1; pointer-events: all; }
+
+.modal-box {
+    background: var(--surface); border-radius: 20px; padding: 36px;
+    max-width: 420px; width: 90%; box-shadow: var(--shadow-lg);
+    text-align: center; transform: scale(0.85); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.modal-overlay.visible .modal-box { transform: scale(1); }
+
+.modal-icon {
+    width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 18px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--danger-light); font-size: 1.8em; color: var(--danger);
+}
+.modal-box h3 { font-size: 1.3em; font-weight: 800; margin-bottom: 8px; color: var(--text-main); }
+.modal-box p { color: var(--text-muted); font-size: 0.95em; margin-bottom: 24px; line-height: 1.5; }
+
+.modal-actions { display: flex; gap: 12px; }
+.modal-btn {
+    flex: 1; padding: 12px; border-radius: 12px; font-weight: 700;
+    font-size: 0.95em; cursor: pointer; transition: all 0.25s; border: none;
+}
+.modal-btn-cancel {
+    background: var(--bg-app); color: var(--text-main); border: 1px solid var(--border);
+}
+.modal-btn-cancel:hover { background: var(--border); }
+.modal-btn-confirm {
+    background: var(--danger); color: white;
+}
+.modal-btn-confirm:hover { background: #b91c1c; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(220,38,38,0.3); }
 
 @media (max-width: 900px) {
     .sidebar { transform: translateX(-100%); }

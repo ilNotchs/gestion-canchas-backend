@@ -21,7 +21,7 @@ function lanzarConfetti() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     const pieces = [];
-    const colors = ['#6366f1','#06b6d4','#f43f5e','#f59e0b','#10b981','#ec4899'];
+    const colors = ['#22c55e','#059669','#16a34a','#4ade80','#a7f3d0','#fbbf24'];
     for (let i = 0; i < 120; i++) {
         pieces.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height, w: Math.random()*8+4, h: Math.random()*4+2, color: colors[Math.floor(Math.random()*colors.length)], vy: Math.random()*3+2, vx: Math.random()*2-1, rot: Math.random()*360 });
     }
@@ -471,13 +471,35 @@ document.getElementById('buscador-canchas')?.addEventListener('input', (e) => {
     renderizarCanchasAdmin(filtradas);
 });
 
+// Modal de cancelación personalizado
+function mostrarModalCancelar() {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('modal-cancelar');
+        modal.classList.add('visible');
+
+        const btnSi = document.getElementById('modal-si');
+        const btnNo = document.getElementById('modal-no');
+
+        function limpiar() {
+            modal.classList.remove('visible');
+            btnSi.replaceWith(btnSi.cloneNode(true));
+            btnNo.replaceWith(btnNo.cloneNode(true));
+        }
+
+        btnSi.addEventListener('click', () => { limpiar(); resolve(true); }, { once: true });
+        btnNo.addEventListener('click', () => { limpiar(); resolve(false); }, { once: true });
+        modal.addEventListener('click', (e) => { if (e.target === modal) { limpiar(); resolve(false); } }, { once: true });
+    });
+}
+
 async function cancelarReserva(id) {
-    if (!confirm("¿Deseas cancelar esta reserva de forma irreversible?")) return;
+    const confirmado = await mostrarModalCancelar();
+    if (!confirmado) return;
+
     try {
         await fetch(`/api/reservas/${id}/cancelar`, { method: 'PUT' });
         showToast("Reserva cancelada y stock devuelto", "success");
         
-        // Recargar la vista actual según rol
         const user = JSON.parse(localStorage.getItem('usuario'));
         if(user.rol === 'admin') cargarInventario();
         else cargarMisReservas();
