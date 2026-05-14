@@ -101,6 +101,60 @@ if (formLogin) {
     });
 }
 
+// Toggle Login <-> Registro
+document.getElementById('btn-mostrar-registro')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('vista-login').style.display = 'none';
+    document.getElementById('vista-registro').style.display = 'block';
+});
+document.getElementById('btn-mostrar-login')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('vista-registro').style.display = 'none';
+    document.getElementById('vista-login').style.display = 'block';
+});
+
+// Solo permitir números en el campo de teléfono
+document.getElementById('reg-telefono')?.addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+});
+
+// Formulario de Registro
+const formRegistro = document.getElementById('form-registro');
+if (formRegistro) {
+    formRegistro.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('reg-nombre').value;
+        const email = document.getElementById('reg-email').value;
+        const telefono = document.getElementById('reg-telefono').value;
+        const password = document.getElementById('reg-pass').value;
+
+        if (!/^[0-9]+$/.test(telefono)) {
+            showToast('El teléfono solo puede contener números', 'error');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, email, telefono })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.mensaje, 'success');
+                // Volver a la vista de login
+                document.getElementById('vista-registro').style.display = 'none';
+                document.getElementById('vista-login').style.display = 'block';
+                formRegistro.reset();
+            } else {
+                showToast(data.mensaje, 'error');
+            }
+        } catch (e) { 
+            showToast('Error de conexión con el servidor', 'error'); 
+        }
+    });
+}
+
 function aplicarRoles(usuario) {
     document.getElementById('user-display-name').innerText = usuario.username;
     document.getElementById('nombre').value = usuario.username;
@@ -163,6 +217,8 @@ function calcularTotal() {
     const selectCancha = document.getElementById('tipo-cancha');
     const selectPromo = document.getElementById('combo-promo');
     const inputBalones = document.getElementById('balones');
+    const petosR = document.getElementById('petos_rojos')?.value || 0;
+    const petosA = document.getElementById('petos_azules')?.value || 0;
     
     if (!selectCancha || !selectPromo) return;
 
@@ -176,6 +232,30 @@ function calcularTotal() {
 
     const total = precioBase + extraP + extraB;
     document.getElementById('factura-total').innerText = `$${total.toLocaleString('es-CO')}`;
+
+    // Resumen visual (visible en pantalla y en el PDF)
+    const user = JSON.parse(localStorage.getItem('usuario'));
+    const horaSelect = document.getElementById('hora');
+    const horaTexto = horaSelect ? horaSelect.options[horaSelect.selectedIndex].text : '';
+    const fechaVal = document.getElementById('fecha')?.value || '';
+    const promoTexto = selectPromo.options[selectPromo.selectedIndex].text;
+
+    const resumenHTML = `
+        <div class="resumen-visual-grid">
+            <p><strong>Cliente:</strong> ${user ? user.username : 'N/A'}</p>
+            <p><strong>Cancha:</strong> ${op.text.trim()}</p>
+            <p><strong>Fecha:</strong> ${fechaVal}</p>
+            <p><strong>Hora:</strong> ${horaTexto}</p>
+            <p><strong>Balones:</strong> ${inputBalones.value}</p>
+            <p><strong>Petos:</strong> ${parseInt(petosR) + parseInt(petosA)} (R:${petosR} / A:${petosA})</p>
+            <p><strong>Promoción:</strong> ${promoTexto}</p>
+            <p><strong>Precio Base:</strong> $${precioBase.toLocaleString('es-CO')}</p>
+        </div>
+    `;
+    document.getElementById('resumen-visual').innerHTML = resumenHTML;
+
+    // Detalle oculto para el PDF (se muestra solo al generar)
+    document.getElementById('detalle-alquiler-pdf').innerHTML = resumenHTML;
 }
 
 document.getElementById('form-reserva')?.addEventListener('submit', async (e) => {
@@ -422,19 +502,25 @@ window.onload = () => {
 };
 
 function descargarPDF() {
+    // Aseguramos que calcularTotal actualice el detalle antes de generar
+    calcularTotal();
+
     showToast("Generando recibo PDF...", "success");
     const el = document.getElementById('recibo-imprimible');
     const head = document.getElementById('pdf-header');
+    const detalle = document.getElementById('detalle-alquiler-pdf');
     
     head.style.display = 'block';
+    detalle.style.display = 'block';
     
     html2pdf().set({
-        margin: 1,
+        margin: 0.75,
         filename: `FitCanchas_Comprobante_${Date.now()}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     }).from(el).save().then(() => {
         head.style.display = 'none';
+        detalle.style.display = 'none';
     });
 }

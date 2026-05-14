@@ -520,6 +520,21 @@ input:focus, select:focus {
 .input-login-group input { padding-left: 45px; background: #0f172a; border-color: #334155; color: white; }
 .input-login-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2); }
 
+.auth-toggle { text-align: center; margin-top: 20px; color: #94a3b8; font-size: 0.9em; }
+.auth-toggle a { color: var(--primary); text-decoration: none; font-weight: 700; cursor: pointer; }
+.auth-toggle a:hover { text-decoration: underline; }
+
+/* Resumen visual de la reserva (visible en pantalla y PDF) */
+.resumen-visual-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    font-size: 0.9em;
+    color: var(--text-main);
+}
+.resumen-visual-grid p { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.resumen-visual-grid strong { color: var(--text-muted); }
+
 /* =========================================================
    TOAST NOTIFICATIONS
 ========================================================= */

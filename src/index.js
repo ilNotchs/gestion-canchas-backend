@@ -27,6 +27,9 @@ app.use('/api/reservas', reservasRoutes);
 // RUTA DE LOGIN: Recibe el usuario y contraseña del frontend para validarlos
 app.post('/api/login', authController.login); 
 
+// RUTA DE REGISTRO: Permite que nuevos usuarios se registren como clientes
+app.post('/api/register', authController.register);
+
 // === 4. VERIFICACIÓN DE CONEXIÓN A LA BASE DE DATOS ===
 const checkConnection = async () => {
     try {

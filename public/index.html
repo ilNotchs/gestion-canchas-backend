@@ -21,19 +21,49 @@
                 </div>
             </div>
             <div class="login-form-area">
-                <h2>Bienvenido</h2>
-                <p>Ingresa tus credenciales para continuar</p>
-                <form id="form-login">
-                    <div class="input-login-group">
-                        <i class="fas fa-user"></i>
-                        <input type="text" id="user" placeholder="Usuario" required>
-                    </div>
-                    <div class="input-login-group">
-                        <i class="fas fa-lock"></i>
-                        <input type="password" id="pass" placeholder="Contraseña" required>
-                    </div>
-                    <button type="submit" class="btn-primary" style="width: 100%;">Iniciar Sesión</button>
-                </form>
+                <!-- Vista de Login -->
+                <div id="vista-login">
+                    <h2>Bienvenido</h2>
+                    <p>Ingresa tus credenciales para continuar</p>
+                    <form id="form-login">
+                        <div class="input-login-group">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="user" placeholder="Usuario" required>
+                        </div>
+                        <div class="input-login-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="pass" placeholder="Contraseña" required>
+                        </div>
+                        <button type="submit" class="btn-primary" style="width: 100%;">Iniciar Sesión</button>
+                    </form>
+                    <p class="auth-toggle">¿No tienes cuenta? <a href="#" id="btn-mostrar-registro">Regístrate aquí</a></p>
+                </div>
+
+                <!-- Vista de Registro -->
+                <div id="vista-registro" style="display: none;">
+                    <h2>Crear Cuenta</h2>
+                    <p>Completa tus datos para registrarte</p>
+                    <form id="form-registro">
+                        <div class="input-login-group">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="reg-nombre" placeholder="Nombre de usuario" required>
+                        </div>
+                        <div class="input-login-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="reg-email" placeholder="Correo electrónico" required>
+                        </div>
+                        <div class="input-login-group">
+                            <i class="fas fa-phone"></i>
+                            <input type="tel" id="reg-telefono" placeholder="Número telefónico" pattern="[0-9]*" inputmode="numeric" required>
+                        </div>
+                        <div class="input-login-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="reg-pass" placeholder="Contraseña" required>
+                        </div>
+                        <button type="submit" class="btn-primary" style="width: 100%;">Registrarse</button>
+                    </form>
+                    <p class="auth-toggle">¿Ya tienes cuenta? <a href="#" id="btn-mostrar-login">Inicia sesión</a></p>
+                </div>
             </div>
         </div>
     </div>
@@ -154,14 +184,17 @@
                     </div>
 
                     <div class="facturacion-box" id="recibo-imprimible">
-                        <div id="pdf-header" style="display:none; text-align:center;">
-                            <h1>FIT CANCHAS</h1><hr>
+                        <div id="pdf-header" style="display:none; text-align:center; margin-bottom: 20px;">
+                            <h1 style="color:#059669; font-weight:900;">FIT CANCHAS</h1>
+                            <p style="color:#64748b;">Comprobante de Reserva</p>
+                            <hr style="margin: 15px 0; border: 1px dashed #e2e8f0;">
                         </div>
+                        <div id="detalle-alquiler-pdf" style="display:none; margin-bottom: 20px;"></div>
                         <div class="resumen-pago">
-                            <div id="detalle-alquiler-pdf" style="display:none;"></div>
                             <div class="total-label">Total Estimado</div>
                             <div id="factura-total" class="total-monto">$0</div>
                         </div>
+                        <div id="resumen-visual" style="margin-bottom: 20px;"></div>
                         <div class="acciones-finales">
                             <button type="button" onclick="descargarPDF()" class="btn-secondary">
                                 <i class="fas fa-file-pdf"></i> Recibo
