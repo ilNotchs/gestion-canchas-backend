@@ -38,9 +38,17 @@
     --primary-light: rgba(10, 77, 46, 0.3);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; cursor: default; }
 
 body { background: var(--bg-app); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
+
+/* Cursores para interactividad nativa */
+p, h1, h2, h3, h4, h5, h6, span, label, div { user-select: none; }
+input:not([readonly]), textarea { cursor: text; user-select: auto; }
+input[readonly] { cursor: default; pointer-events: none; }
+input[readonly]:focus { outline: none; border-color: var(--border); box-shadow: none; }
+button, a, select, i, .payment-card, .btn-horario, .nav-item, .btn-counter, .btn-icon, .user-profile-sm, .promo-card, .btn-aplicar { cursor: pointer; user-select: none; }
+.payment-card *, .btn-horario *, .nav-item * { cursor: pointer; }
 
 /* =========================================================
    SIDEBAR
