@@ -7,20 +7,49 @@ function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
     const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
     toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
-    
     container.appendChild(toast);
-    
-    // Animate in
     setTimeout(() => toast.classList.add('show'), 10);
-    
-    // Remove after 3.5s
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 400);
-    }, 3500);
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 3500);
+}
+
+// Confetti celebration
+function lanzarConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const pieces = [];
+    const colors = ['#6366f1','#06b6d4','#f43f5e','#f59e0b','#10b981','#ec4899'];
+    for (let i = 0; i < 120; i++) {
+        pieces.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height, w: Math.random()*8+4, h: Math.random()*4+2, color: colors[Math.floor(Math.random()*colors.length)], vy: Math.random()*3+2, vx: Math.random()*2-1, rot: Math.random()*360 });
+    }
+    let frame = 0;
+    function draw() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        pieces.forEach(p => {
+            ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+            ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, 1 - frame/120);
+            ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
+            p.y += p.vy; p.x += p.vx; p.rot += 3;
+        });
+        frame++;
+        if (frame < 140) requestAnimationFrame(draw);
+        else ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+    draw();
+}
+
+// Animated counter
+function animarContador(el, target, prefix = '', suffix = '') {
+    let current = 0;
+    const step = Math.max(1, Math.ceil(target / 40));
+    const timer = setInterval(() => {
+        current += step;
+        if (current >= target) { current = target; clearInterval(timer); }
+        el.innerText = `${prefix}${current.toLocaleString('es-CO')}${suffix}`;
+    }, 30);
 }
 
 // Reloj en vivo
@@ -261,8 +290,6 @@ function calcularTotal() {
 document.getElementById('form-reserva')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const user = JSON.parse(localStorage.getItem('usuario'));
-    
-    // Método de pago radio buttons
     const metodoPago = document.querySelector('input[name="pago"]:checked').value;
 
     const payload = {
@@ -277,7 +304,7 @@ document.getElementById('form-reserva')?.addEventListener('submit', async (e) =>
         metodo_pago: metodoPago
     };
 
-    const btn = document.querySelector('.btn-primary');
+    const btn = document.getElementById('btn-confirmar');
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
     btn.disabled = true;
 
@@ -289,21 +316,22 @@ document.getElementById('form-reserva')?.addEventListener('submit', async (e) =>
         });
 
         if (res.ok) { 
-            showToast("¡Reserva confirmada exitosamente!", "success");
+            showToast("\u00a1Reserva confirmada exitosamente!", "success");
+            lanzarConfetti();
             setTimeout(() => {
-                btn.innerHTML = 'Confirmar Reserva';
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar Reserva';
                 btn.disabled = false;
                 mostrarModulo(user.rol === 'admin' ? 'dashboard' : 'mis-reservas');
-            }, 1500);
+            }, 2000);
         } else { 
             const data = await res.json();
             showToast(data.mensaje || "Error: Conflicto de horario o stock", "error"); 
-            btn.innerHTML = 'Confirmar Reserva';
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar Reserva';
             btn.disabled = false;
         }
     } catch(err) {
-        showToast("Error de conexión", "error");
-        btn.innerHTML = 'Confirmar Reserva';
+        showToast("Error de conexi\u00f3n", "error");
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar Reserva';
         btn.disabled = false;
     }
 });
@@ -352,16 +380,15 @@ async function cargarDashboard() {
         const can = await rCan.json(), res = await rRes.json();
         
         const perc = can.length === 0 ? 0 : (res.length / can.length) * 100;
-        document.getElementById('stat-ocupacion').innerText = `${perc.toFixed(0)}%`;
+        animarContador(document.getElementById('stat-ocupacion'), Math.round(perc), '', '%');
         document.getElementById('barra-ocupacion').style.width = `${perc}%`;
         
-        // Ingresos: sumar basándose en el tipo de cancha asumiendo 11v11=100k, 7v7=60k
         let totalDinero = 0;
         res.forEach(r => {
-            totalDinero += r.nombre_cancha.includes('11v11') ? 100000 : 60000;
+            totalDinero += (r.nombre_cancha && r.nombre_cancha.includes('Sintética')) ? 60000 : 100000;
         });
-        document.getElementById('stat-ingresos').innerText = `$${totalDinero.toLocaleString('es-CO')}`;
-        document.getElementById('stat-total-res').innerText = res.length;
+        animarContador(document.getElementById('stat-ingresos'), totalDinero, '$');
+        animarContador(document.getElementById('stat-total-res'), res.length);
     } catch (e) { showToast("Error cargando dashboard", "error"); }
 }
 

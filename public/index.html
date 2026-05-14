@@ -196,10 +196,10 @@
                         </div>
                         <div id="resumen-visual" style="margin-bottom: 20px;"></div>
                         <div class="acciones-finales">
-                            <button type="button" onclick="descargarPDF()" class="btn-secondary">
-                                <i class="fas fa-file-pdf"></i> Recibo
+                            <button type="button" onclick="descargarPDF()" class="btn-recibo">
+                                <i class="fas fa-file-pdf"></i> Descargar Recibo
                             </button>
-                            <button type="submit" class="btn-primary">Confirmar Reserva</button>
+                            <button type="submit" class="btn-primary" id="btn-confirmar"><i class="fas fa-check-circle"></i> Confirmar Reserva</button>
                         </div>
                     </div>
                 </form>
@@ -269,6 +269,9 @@
 
         </div>
     </main>
+
+    <!-- Confetti -->
+    <canvas id="confetti-canvas"></canvas>
 
     <!-- Contenedor de Toasts -->
     <div id="toast-container"></div>
