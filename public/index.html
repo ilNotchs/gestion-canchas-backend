@@ -95,16 +95,33 @@
                 <i class="fas fa-chart-pie"></i> Dashboard Admin
             </button>
             <button class="nav-item admin-only" onclick="mostrarModulo('inventario')" style="display:none;">
-                <i class="fas fa-boxes"></i> Inventario Admin
+                <i class="fas fa-boxes"></i> Inventario Canchas
             </button>
+            <button class="nav-item admin-only" onclick="mostrarModulo('admin-productos')" style="display:none;">
+                <i class="fas fa-shopping-bag"></i> Gestión Productos
+            </button>
+            <button class="nav-item admin-only" onclick="mostrarModulo('admin-caja')" style="display:none;">
+                <i class="fas fa-cash-register"></i> Caja y Ventas
+            </button>
+            
+            <div class="nav-divider cliente-only"></div>
+            
+            <button class="nav-item cliente-only" onclick="mostrarModulo('tienda')">
+                <i class="fas fa-store"></i> Tienda
+            </button>
+            <button class="nav-item cliente-only" onclick="mostrarModulo('carrito')">
+                <i class="fas fa-shopping-cart"></i> Mi Carrito <span id="carrito-badge" class="badge bg-danger ms-2" style="display:none; background:var(--danger); color:white; padding:2px 6px; border-radius:10px; font-size:0.7em;">0</span>
+            </button>
+            
+            <button class="nav-item cliente-only" onclick="mostrarModulo('mis-compras')">
+                <i class="fas fa-shopping-bag"></i> Mis Compras
+            </button>
+            
             <button class="nav-item" onclick="mostrarModulo('perfil')">
                 <i class="fas fa-user"></i> Perfil
             </button>
-            <button class="nav-item" onclick="mostrarModulo('config')">
-                <i class="fas fa-cog"></i> Configuración
-            </button>
 
-            <div class="sidebar-promo">
+            <div class="sidebar-promo cliente-only">
                 <span class="promo-badge">20% OFF</span>
                 <h4>¡Reserva más,<br>paga menos!</h4>
                 <p>Aprovecha nuestras promociones exclusivas para ti.</p>
@@ -490,42 +507,7 @@
                 </div>
             </section>
 
-            <!-- ================= MÓDULO: CONFIGURACIÓN ================= -->
-            <section id="modulo-config" class="modulo">
-                <div class="form-header" style="margin-bottom:20px;">
-                    <div class="icon-box" style="background:#f1f5f9; color:var(--text-muted);"><i class="fas fa-cog"></i></div>
-                    <div>
-                        <h3>Ajustes de Plataforma</h3>
-                        <p>Personaliza tu experiencia en FitCanchas</p>
-                    </div>
-                </div>
-                
-                <div class="config-grid">
-                    <div class="config-section">
-                        <h4>Apariencia y Sistema</h4>
-                        <div class="config-item">
-                            <div class="config-info"><h5>Modo Oscuro</h5><p>Cambia a una interfaz con colores oscuros.</p></div>
-                            <label class="switch"><input type="checkbox" id="toggle-dark"><span class="slider"></span></label>
-                        </div>
-                        <div class="config-item">
-                            <div class="config-info"><h5>Notificaciones In-App</h5><p>Recibe recordatorios de tus partidos.</p></div>
-                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
-                        </div>
-                    </div>
-                    
-                    <div class="config-section">
-                        <h4>Preferencias de Reserva</h4>
-                        <div class="input-group" style="margin-bottom:15px;">
-                            <label>Cancha Favorita (se seleccionará por defecto)</label>
-                            <div class="custom-select"><i class="fas fa-heart"></i><select id="pref-cancha"><option>Ninguna</option></select></div>
-                        </div>
-                        <div class="config-item" style="margin-top:20px;">
-                            <div class="config-info"><h5>Limpiar Caché</h5><p>Resetea la información almacenada localmente.</p></div>
-                            <button class="btn-outline danger" onclick="localStorage.clear(); location.reload();" style="width:auto; padding:8px 16px;">Borrar Datos</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
+
 
             <!-- ================= MÓDULO: DASHBOARD (ADMIN) ================= -->
             <section id="modulo-dashboard" class="modulo">
@@ -573,8 +555,256 @@
                 </div>
             </section>
 
+            <!-- ================= MÓDULO: GESTIÓN DE PRODUCTOS (ADMIN) ================= -->
+            <section id="modulo-admin-productos" class="modulo">
+                <div class="form-header" style="margin-bottom:20px; justify-content: space-between;">
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div class="icon-box" style="background:var(--primary-light); color:var(--primary);"><i class="fas fa-shopping-bag"></i></div>
+                        <div>
+                            <h3>Gestión de Productos</h3>
+                            <p>Administra el catálogo de la tienda</p>
+                        </div>
+                    </div>
+                    <button class="btn-confirmar" style="width: auto; padding: 10px 20px;" onclick="abrirModalProducto()">
+                        <i class="fas fa-plus"></i> Nuevo Producto
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="custom-input" style="width: 300px;">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="buscar-producto" placeholder="Buscar producto..." onkeyup="filtrarProductos()">
+                        </div>
+                        <div class="table-filters" id="filtros-categorias">
+                            <!-- Categorías JS -->
+                        </div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Imagen</th>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-productos">
+                                <!-- JS rellena -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= MÓDULO: CAJA Y VENTAS (ADMIN) ================= -->
+            <section id="modulo-admin-caja" class="modulo">
+                <div class="form-header" style="margin-bottom:20px;">
+                    <div class="icon-box" style="background:var(--success-light); color:var(--success);"><i class="fas fa-cash-register"></i></div>
+                    <div>
+                        <h3>Caja y Ventas</h3>
+                        <p>Monitoreo de ingresos de la tienda</p>
+                    </div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:var(--success-light); color:var(--success);"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="stat-info"><h5>Ventas Totales</h5><h3 id="stat-ventas-total">$0</h3></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:var(--primary-light); color:var(--primary);"><i class="fas fa-shopping-cart"></i></div>
+                        <div class="stat-info"><h5>Ventas Hoy</h5><h3 id="stat-ventas-hoy">$0</h3></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:var(--warning-light); color:var(--warning);"><i class="fas fa-box"></i></div>
+                        <div class="stat-info"><h5>Pedidos Hoy</h5><h3 id="stat-pedidos-hoy">0</h3></div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h4 style="font-weight:700;">Últimas Ventas</h4>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead>
+                                <tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th></tr>
+                            </thead>
+                            <tbody id="tabla-ventas-admin">
+                                <!-- JS rellena -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= MÓDULO: TIENDA (CLIENTE) ================= -->
+            <section id="modulo-tienda" class="modulo">
+                <div class="form-header" style="margin-bottom:20px;">
+                    <div class="icon-box" style="background:var(--primary-light); color:var(--primary);"><i class="fas fa-store"></i></div>
+                    <div>
+                        <h3>Tienda FitCanchas</h3>
+                        <p>Bebidas, snacks y equipamiento</p>
+                    </div>
+                </div>
+
+                <div class="table-header" style="margin-bottom: 20px; background: transparent; border: none; padding: 0;">
+                    <div class="custom-input" style="width: 300px; max-width: 100%;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="buscar-tienda" placeholder="Buscar en la tienda..." onkeyup="filtrarTienda()">
+                    </div>
+                </div>
+
+                <div class="promos-grid" id="grid-tienda">
+                    <!-- JS rellena -->
+                </div>
+            </section>
+
+            <!-- ================= MÓDULO: CARRITO (CLIENTE) ================= -->
+            <section id="modulo-carrito" class="modulo">
+                <div class="reserva-layout">
+                    <!-- Lista de Carrito -->
+                    <div class="card-form">
+                        <div class="form-header">
+                            <div class="icon-box"><i class="fas fa-shopping-cart"></i></div>
+                            <div>
+                                <h3>Mi Carrito</h3>
+                                <p>Revisa tus productos antes de pagar</p>
+                            </div>
+                        </div>
+
+                        <div id="lista-carrito" style="display: flex; flex-direction: column; gap: 15px;">
+                            <!-- JS rellena -->
+                        </div>
+                    </div>
+
+                    <!-- Resumen Compra -->
+                    <div class="resumen-card">
+                        <h4>RESUMEN DE COMPRA</h4>
+                        
+                        <div class="resumen-lista" id="resumen-carrito-lista">
+                            <!-- JS rellena -->
+                        </div>
+
+                        <div class="resumen-total">
+                            <span>TOTAL</span>
+                            <strong id="carrito-total-dinero">$0</strong>
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 20px;">
+                            <label>Método de Pago</label>
+                            <div class="custom-select">
+                                <i class="fas fa-wallet"></i>
+                                <select id="carrito-metodo-pago">
+                                    <option value="efectivo">Efectivo en caja</option>
+                                    <option value="tarjeta">Tarjeta (Datafono)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-confirmar" id="btn-confirmar-compra" onclick="procesarCompra()">
+                            Confirmar Compra <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= MÓDULO: MIS COMPRAS (CLIENTE) ================= -->
+            <section id="modulo-mis-compras" class="modulo">
+                <div class="form-header" style="margin-bottom:20px;">
+                    <div class="icon-box" style="background:var(--success-light); color:var(--success);"><i class="fas fa-shopping-bag"></i></div>
+                    <div>
+                        <h3>Mis Compras</h3>
+                        <p>Historial de pedidos en la tienda</p>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead>
+                                <tr><th>ID Pedido</th><th>Fecha</th><th>Productos</th><th>Total</th><th>Estado</th></tr>
+                            </thead>
+                            <tbody id="tabla-mis-compras">
+                                <!-- JS rellena -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
         </div>
     </main>
+
+    <!-- Modal de Producto (Admin) -->
+    <div id="modal-producto" class="modal-overlay">
+        <div class="modal-box" style="max-width: 500px; text-align: left;">
+            <div class="form-header" style="margin-bottom: 20px;">
+                <h3 id="modal-producto-title">Nuevo Producto</h3>
+                <button class="btn-outline" style="border: none; padding: 5px;" onclick="cerrarModalProducto()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="form-producto">
+                <input type="hidden" id="prod-id">
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label>Nombre del Producto</label>
+                    <div class="custom-input">
+                        <i class="fas fa-box"></i>
+                        <input type="text" id="prod-nombre" required>
+                    </div>
+                </div>
+                <div class="form-row" style="margin-bottom: 15px;">
+                    <div class="input-group">
+                        <label>Precio ($)</label>
+                        <div class="custom-input">
+                            <i class="fas fa-dollar-sign"></i>
+                            <input type="number" id="prod-precio" min="0" step="100" required>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Stock</label>
+                        <div class="custom-input">
+                            <i class="fas fa-boxes"></i>
+                            <input type="number" id="prod-stock" min="0" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row" style="margin-bottom: 15px;">
+                    <div class="input-group">
+                        <label>Categoría</label>
+                        <div class="custom-input">
+                            <i class="fas fa-tag"></i>
+                            <input type="text" id="prod-categoria" list="prod-cat-list" required>
+                            <datalist id="prod-cat-list"></datalist>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Estado</label>
+                        <div class="custom-select">
+                            <i class="fas fa-toggle-on"></i>
+                            <select id="prod-estado" required>
+                                <option value="activo">Activo</option>
+                                <option value="inactivo">Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label>Imagen</label>
+                    <input type="file" id="prod-imagen" accept="image/png, image/jpeg, image/webp" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md);">
+                </div>
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label>Descripción</label>
+                    <textarea id="prod-descripcion" rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); resize: vertical;"></textarea>
+                </div>
+                <button type="submit" class="btn-confirmar" id="btn-guardar-producto">Guardar Producto</button>
+            </form>
+        </div>
+    </div>
 
     <!-- Modal de Cancelación -->
     <div id="modal-cancelar" class="modal-overlay">

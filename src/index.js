@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -17,12 +19,16 @@ app.use(express.static('public'));
 const inventarioRoutes = require('./routes/inventarioRoutes');
 const canchasRoutes = require('./routes/canchasRoutes');
 const reservasRoutes = require('./routes/reservasRoutes');
+const productosRoutes = require('./routes/productosRoutes');
+const ventasRoutes = require('./routes/ventasRoutes');
 const authController = require('./controllers/authController'); // <-- Importamos el controlador de Login
 
 // === 3. DEFINIR PUNTOS DE ACCESO (APIs) ===
 app.use('/api/inventario', inventarioRoutes);
 app.use('/api/canchas', canchasRoutes);
 app.use('/api/reservas', reservasRoutes);
+app.use('/api/productos', productosRoutes);
+app.use('/api/ventas', ventasRoutes);
 
 // RUTA DE LOGIN: Recibe el usuario y contraseña del frontend para validarlos
 app.post('/api/login', authController.login); 
@@ -36,12 +42,28 @@ const checkConnection = async () => {
         // Hacemos una consulta simple para asegurar que la base de datos en Aiven responde
         await db.query('SELECT 1 + 1 AS result');
         console.log('✅ Conexión a la base de datos establecida con éxito.');
+        
+        // Inicializar tablas
+        await db.initializeDatabase();
+        
+        // Crear carpeta de uploads si no existe
+        const uploadsDir = path.join(__dirname, '../public/uploads/productos');
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+            console.log('📁 Carpeta de uploads creada');
+        }
     } catch (error) {
         console.error('❌ Error crítico al conectar a la base de datos:', error.message);
     }
 };
 
 checkConnection();
+
+// === MANEJO GLOBAL DE ERRORES ===
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ success: false, mensaje: 'Error interno en el servidor.' });
+});
 
 // === 5. ENCENDER EL SERVIDOR ===
 const PORT = process.env.PORT || 3000;
