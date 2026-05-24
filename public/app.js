@@ -64,8 +64,6 @@ function mostrarModulo(id) {
     if(id === 'mis-compras') renderMisCompras();
 }
 
-});
-
 function inicializarSesion() {
     const sesion = localStorage.getItem('usuario');
     if(sesion) {
