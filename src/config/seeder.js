@@ -26,12 +26,13 @@ const NOMBRES_CANCHAS_NUEVAS = [
     'Cancha Deportivo', 'Cancha San Andrés', 'Cancha Real Madrid'
 ];
 
+// 7 franjas horarias exactas de la UI
 const FRANJAS_HORARIAS = [
-    '08:00:00', '10:00:00', '12:00:00', '14:00:00',
-    '16:00:00', '18:00:00', '20:00:00', '22:00:00'
+    '16:00:00', '17:00:00', '18:00:00', '19:00:00', '20:00:00', '21:00:00', '22:00:00'
 ];
 
-const FECHAS_RESERVAS = ['2026-06-04', '2026-06-05', '2026-06-06'];
+// 4 días consecutivos exactos
+const FECHAS_RESERVAS = ['2026-06-04', '2026-06-05', '2026-06-06', '2026-06-07'];
 
 const METODOS_PAGO = ['efectivo', 'transferencia', 'tarjeta'];
 
@@ -99,7 +100,7 @@ const PRODUCTOS = [
     { nombre: 'Set 10 Conos Agilidad 15cm', categoria: 'Conos de entrenamiento', descripcion: 'Set de 10 conos planos para ejercicios de agilidad', precio: 18000, stock: 30 },
     { nombre: 'Set 20 Conos Mini Platos', categoria: 'Conos de entrenamiento', descripcion: 'Set de 20 platillos marcadores multicolor', precio: 22000, stock: 25 },
     { nombre: 'Set 6 Conos Grandes 30cm', categoria: 'Conos de entrenamiento', descripcion: 'Conos grandes de entrenamiento profesional', precio: 28000, stock: 20 },
-    { nombre: 'Escalera Agilidad + 10 Conos', categoria: 'Conos de entrenamiento', descripcion: 'Kit de escalera de coordinación con conos incluidos', precio: 55000, stock: 10 },
+    { nombre: 'Escalera Agilidad + 10 Conos', categoria: 'Conos de entrenamiento', descripcion: 'Kit de escalera de coordination con conos incluidos', precio: 55000, stock: 10 },
     { nombre: 'Set 4 Estacas Slalom', categoria: 'Conos de entrenamiento', descripcion: 'Estacas flexibles para circuitos de dribling', precio: 35000, stock: 15 },
     { nombre: 'Silbato Fox 40 Classic', categoria: 'Silbatos', descripcion: 'Silbato profesional Fox 40 sin bolilla', precio: 25000, stock: 20 },
     { nombre: 'Silbato Molten Dolphin Pro', categoria: 'Silbatos', descripcion: 'Silbato Molten para árbitro profesional', precio: 35000, stock: 15 },
@@ -148,6 +149,22 @@ function randomDate(daysBack) {
 const autoSeed = async (conn) => {
     try {
         console.log('🌱 Iniciando verificación de población de base de datos...');
+
+        // 0. Detectar dinámicamente la columna del precio de las canchas en la base de datos conectada
+        const [canchasCols] = await conn.query('SHOW COLUMNS FROM canchas');
+        const canchaFields = canchasCols.map(c => c.Field);
+        let priceField = 'precio_hora'; // Valor por defecto
+        
+        if (!canchaFields.includes('precio_hora')) {
+            if (canchaFields.includes('precio')) {
+                priceField = 'precio';
+            } else if (canchaFields.includes('valor')) {
+                priceField = 'valor';
+            } else if (canchaFields.includes('precio_alquiler')) {
+                priceField = 'precio_alquiler';
+            }
+        }
+        console.log(`🔍 Columna de precio en la tabla canchas detectada: "${priceField}"`);
 
         // 1. Verificar conteo de usuarios
         const [usersCount] = await conn.query('SELECT COUNT(*) as total FROM usuarios');
@@ -213,7 +230,7 @@ const autoSeed = async (conn) => {
                 const [existe] = await conn.query('SELECT id FROM canchas WHERE nombre = ?', [nombre]);
                 if (existe.length === 0) {
                     await conn.query(
-                        'INSERT INTO canchas (nombre, tipo, precio_hora) VALUES (?, ?, ?)',
+                        `INSERT INTO canchas (nombre, tipo, ${priceField}) VALUES (?, ?, ?)`,
                         [nombre, tipo, precio]
                     );
                 }
@@ -221,13 +238,17 @@ const autoSeed = async (conn) => {
             console.log('  ✅ Canchas adicionales creadas');
         }
 
-        const [todasCanchas] = await conn.query('SELECT id, nombre, tipo, precio_hora FROM canchas ORDER BY id');
+        const [todasCanchas] = await conn.query(`SELECT id, nombre, tipo, ${priceField} FROM canchas ORDER BY id`);
 
         // 3. Verificar conteo de reservas
         const [reservasCount] = await conn.query('SELECT COUNT(*) as total FROM reservas');
         console.log(`📊 Reservas actuales en BD: ${reservasCount[0].total}`);
-        if (reservasCount[0].total < 200 && clientUsers.length > 0 && todasCanchas.length > 0) {
-            console.log('📅 Generando reservas...');
+        
+        // El usuario requiere 1,260 registros exactos (45 canchas x 7 horarios x 4 días)
+        const totalReservasRequeridas = todasCanchas.length * FRANJAS_HORARIAS.length * FECHAS_RESERVAS.length; // 45 * 7 * 4 = 1260
+        
+        if (reservasCount[0].total < totalReservasRequeridas && clientUsers.length > 0 && todasCanchas.length > 0) {
+            console.log(`📅 Generando ${totalReservasRequeridas} reservas exactas...`);
             let reservasCreadas = 0;
             let reservasBatch = [];
             const BATCH_SIZE = 50;
@@ -247,7 +268,9 @@ const autoSeed = async (conn) => {
                         const estado = randomItem(estados);
                         const metodo = randomItem(METODOS_PAGO);
                         const horas = randomInt(1, 2);
-                        const total = parseFloat(cancha.precio_hora) * horas;
+                        
+                        const precioCancha = parseFloat(cancha[priceField]) || (cancha.tipo === '11v11' ? 100000 : 60000);
+                        const total = precioCancha * horas;
 
                         reservasBatch.push([
                             cliente.username, cancha.id, fecha, hora, horas,
