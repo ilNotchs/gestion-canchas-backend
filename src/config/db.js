@@ -44,6 +44,12 @@ const initializeDatabase = async () => {
 
         // Asegurar columnas email/telefono en tabla usuarios si ya existía antes del update
         const [cols] = await promisePool.query(`SHOW COLUMNS FROM usuarios`);
+        try {
+            const [colsCanchas] = await promisePool.query('SHOW COLUMNS FROM canchas');
+            console.log('🔍 COLUMNAS DE CANCHAS EN PROD:', JSON.stringify(colsCanchas));
+        } catch (err) {
+            console.log('🔍 Error al consultar columnas de canchas:', err.message);
+        }
         const columnNames = cols.map(c => c.Field);
 
         if (!columnNames.includes('email')) {
