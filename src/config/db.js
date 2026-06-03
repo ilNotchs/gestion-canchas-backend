@@ -54,6 +54,17 @@ const initializeDatabase = async () => {
             console.log('  ✅ Columna telefono agregada a usuarios');
         }
 
+        // Asegurar que la columna password tenga suficiente longitud para bcrypt (255)
+        const passwordCol = cols.find(c => c.Field === 'password');
+        if (passwordCol) {
+            const type = passwordCol.Type.toLowerCase();
+            // Si la longitud no es suficiente (por ejemplo, menor de 60 caracteres para un hash bcrypt)
+            if (!type.includes('255') && !type.includes('256') && !type.includes('500') && !type.includes('text')) {
+                await promisePool.query('ALTER TABLE usuarios MODIFY COLUMN password VARCHAR(255) NOT NULL');
+                console.log('  ✅ Columna password modificada a VARCHAR(255) para soportar hashes bcrypt');
+            }
+        }
+
         // Tabla de productos de la tienda
         await promisePool.query(`
             CREATE TABLE IF NOT EXISTS productos (
