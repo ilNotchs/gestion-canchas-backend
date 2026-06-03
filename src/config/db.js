@@ -42,6 +42,24 @@ const initializeDatabase = async () => {
             )
         `);
 
+        // Asegurar tabla canchas
+        await promisePool.query(`
+            CREATE TABLE IF NOT EXISTS canchas (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(50) NOT NULL UNIQUE,
+                tipo ENUM('11v11', '7v7') NOT NULL,
+                precio_hora DECIMAL(10,2) NOT NULL DEFAULT 60000.00
+            )
+        `);
+
+        // Asegurar columnas de canchas si ya existían
+        const [canchasCols] = await promisePool.query(`SHOW COLUMNS FROM canchas`);
+        const canchaColsNames = canchasCols.map(c => c.Field);
+        if (!canchaColsNames.includes('precio_hora') && !canchaColsNames.includes('precio') && !canchaColsNames.includes('valor')) {
+            await promisePool.query('ALTER TABLE canchas ADD COLUMN precio_hora DECIMAL(10,2) NOT NULL DEFAULT 60000.00');
+            console.log('  ✅ Columna precio_hora agregada a canchas');
+        }
+
         // Asegurar columnas email/telefono en tabla usuarios si ya existía antes del update
         const [cols] = await promisePool.query(`SHOW COLUMNS FROM usuarios`);
         const columnNames = cols.map(c => c.Field);
