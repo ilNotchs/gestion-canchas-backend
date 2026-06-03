@@ -205,6 +205,32 @@ const initializeDatabase = async () => {
             console.log('  ✅ Columna fecha_creacion agregada a pedidos');
         }
 
+        // Asegurar tipos de columnas correctos (por ejemplo, VARCHAR(50) para metodo_pago en lugar de ENUM limitado)
+        try {
+            await promisePool.query('ALTER TABLE reservas MODIFY COLUMN metodo_pago VARCHAR(50) DEFAULT "efectivo"');
+            console.log('  ✅ Tipo de columna metodo_pago verificado en reservas');
+        } catch (err) {
+            console.error('  ⚠️ No se pudo modificar metodo_pago en reservas:', err.message);
+        }
+        try {
+            await promisePool.query('ALTER TABLE pedidos MODIFY COLUMN metodo_pago VARCHAR(50) DEFAULT "efectivo"');
+            console.log('  ✅ Tipo de columna metodo_pago verificado en pedidos');
+        } catch (err) {
+            console.error('  ⚠️ No se pudo modificar metodo_pago en pedidos:', err.message);
+        }
+        try {
+            await promisePool.query("ALTER TABLE reservas MODIFY COLUMN estado ENUM('activa', 'finalizada', 'cancelada') DEFAULT 'activa'");
+            console.log('  ✅ Tipo de columna estado verificado en reservas');
+        } catch (err) {
+            console.error('  ⚠️ No se pudo modificar estado en reservas:', err.message);
+        }
+        try {
+            await promisePool.query("ALTER TABLE pedidos MODIFY COLUMN estado ENUM('pendiente', 'completado', 'cancelado') DEFAULT 'pendiente'");
+            console.log('  ✅ Tipo de columna estado verificado en pedidos');
+        } catch (err) {
+            console.error('  ⚠️ No se pudo modificar estado en pedidos:', err.message);
+        }
+
         // Asegurar AUTO_INCREMENT en todas las tablas por si fueron creadas sin él en entornos previos (como en Render)
         const tablesToAutoIncrement = ['usuarios', 'canchas', 'productos', 'pedidos', 'pedido_detalle', 'reservas', 'inventario'];
         for (const table of tablesToAutoIncrement) {

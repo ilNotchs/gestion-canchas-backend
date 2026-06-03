@@ -39,10 +39,20 @@ const FRANJAS_HORARIAS = [
     '19:00:00', '20:00:00', '21:00:00', '22:00:00'
 ];
 
-// ─── 3 DÍAS CONSECUTIVOS ────────────────────────────────────────────────────
-const FECHAS_RESERVAS = ['2026-06-04', '2026-06-05', '2026-06-06'];
+// ─── 3 DÍAS CONSECUTIVOS (dinámicos, desde mañana) ──────────────────────────
+function generarFechas() {
+    const fechas = [];
+    for (let i = 1; i <= 3; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        fechas.push(d.toISOString().split('T')[0]);
+    }
+    return fechas;
+}
+const FECHAS_RESERVAS = generarFechas();
 
-const METODOS_PAGO = ['efectivo', 'transferencia', 'tarjeta', 'nequi', 'daviplata'];
+// Solo métodos seguros para compatibilidad con columnas ENUM antiguas en producción
+const METODOS_PAGO = ['efectivo', 'transferencia', 'tarjeta'];
 
 // ─── ~100 PRODUCTOS CON SKU (23 categorías requeridas) ──────────────────────
 const PRODUCTOS = [
@@ -342,8 +352,9 @@ const autoSeed = async (conn) => {
         console.log(`📊 Reservas actuales: ${reservasCount[0].total}`);
         
         const totalReservasRequeridas = todasCanchas.length * FRANJAS_HORARIAS.length * FECHAS_RESERVAS.length;
+        console.log(`📊 Reservas requeridas para las 3 fechas: ${totalReservasRequeridas} (fechas: ${FECHAS_RESERVAS.join(', ')})`);
         
-        if (reservasCount[0].total < totalReservasRequeridas && clientUsers.length > 0 && todasCanchas.length > 0) {
+        if (reservasCount[0].total < 1080 && clientUsers.length > 0 && todasCanchas.length > 0) {
             console.log(`📅 Generando ${totalReservasRequeridas} reservas (${todasCanchas.length} canchas × ${FRANJAS_HORARIAS.length} horarios × ${FECHAS_RESERVAS.length} días)...`);
             let reservasCreadas = 0;
             let reservasBatch = [];
