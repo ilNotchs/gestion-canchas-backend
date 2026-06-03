@@ -153,6 +153,24 @@ const initializeDatabase = async () => {
             )
         `);
 
+        // Asegurar AUTO_INCREMENT en todas las tablas por si fueron creadas sin él en entornos previos (como en Render)
+        const tablesToAutoIncrement = ['usuarios', 'canchas', 'productos', 'pedidos', 'pedido_detalle', 'reservas', 'inventario'];
+        for (const table of tablesToAutoIncrement) {
+            try {
+                const [columns] = await promisePool.query(`SHOW COLUMNS FROM \`${table}\` WHERE Field = 'id'`);
+                if (columns.length > 0) {
+                    const col = columns[0];
+                    if (!col.Extra.toLowerCase().includes('auto_increment')) {
+                        console.log(`  🔧 Agregando AUTO_INCREMENT a la columna id de la tabla ${table}...`);
+                        await promisePool.query(`ALTER TABLE \`${table}\` MODIFY COLUMN id INT AUTO_INCREMENT`);
+                        console.log(`  ✅ AUTO_INCREMENT agregado a ${table}.id`);
+                    }
+                }
+            } catch (alterError) {
+                console.error(`  ⚠️ No se pudo asegurar AUTO_INCREMENT en la tabla ${table}:`, alterError.message);
+            }
+        }
+
         // Ejecutar población automática de datos si faltan registros
         await seeder.autoSeed(promisePool);
 

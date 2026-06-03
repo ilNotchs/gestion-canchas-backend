@@ -312,9 +312,10 @@ const autoSeed = async (conn) => {
         const [canchasCount] = await conn.query('SELECT COUNT(*) as total FROM canchas');
         console.log(`📊 Canchas actuales: ${canchasCount[0].total}`);
         
-        if (canchasCount[0].total < 45) {
-            console.log('⚽ Poblando canchas hasta llegar a 45...');
-            for (let i = 0; i < NOMBRES_CANCHAS.length; i++) {
+        let currentCount = canchasCount[0].total;
+        if (currentCount < 45) {
+            console.log(`⚽ Poblando canchas hasta llegar a 45 (actuales: ${currentCount})...`);
+            for (let i = 0; i < NOMBRES_CANCHAS.length && currentCount < 45; i++) {
                 const nombre = NOMBRES_CANCHAS[i];
                 const tipo = i < 20 ? '11v11' : '7v7';
                 const precio = tipo === '11v11' ? 100000 : 60000;
@@ -325,9 +326,10 @@ const autoSeed = async (conn) => {
                         `INSERT INTO canchas (nombre, tipo, ${priceField}) VALUES (?, ?, ?)`,
                         [nombre, tipo, precio]
                     );
+                    currentCount++;
                 }
             }
-            console.log('  ✅ Canchas creadas');
+            console.log(`  ✅ Canchas creadas. Total ahora: ${currentCount}`);
         }
 
         const [todasCanchas] = await conn.query(`SELECT id, nombre, tipo, ${priceField} as precio FROM canchas ORDER BY id`);
