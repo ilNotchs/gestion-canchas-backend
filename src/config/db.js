@@ -1,5 +1,6 @@
 const mysql = require('mysql2');
 require('dotenv').config();
+const seeder = require('./seeder');
 
 // Creamos el pool de conexiones usando las variables del archivo .env
 const poolConfig = {
@@ -103,6 +104,9 @@ const initializeDatabase = async () => {
                 precio_unitario DECIMAL(12,2) NOT NULL
             )
         `);
+
+        // Ejecutar población automática de datos si faltan registros
+        await seeder.autoSeed(promisePool);
 
         console.log('✅ Base de datos inicializada correctamente.');
     } catch (error) {

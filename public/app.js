@@ -144,9 +144,11 @@ async function cargarDatosGlobales() {
         // Poblar selects
         const select = document.getElementById('tipo-cancha');
         const pref = document.getElementById('pref-cancha');
-        if(select && pref) {
-            const options = state.canchas.map(c => `<option value="${c.id}" data-tipo="${c.tipo}" data-name="${c.nombre}">${c.nombre} (${c.tipo})</option>`).join('');
+        const options = state.canchas.map(c => `<option value="${c.id}" data-tipo="${c.tipo}" data-name="${c.nombre}">${c.nombre} (${c.tipo})</option>`).join('');
+        if(select) {
             select.innerHTML = options;
+        }
+        if(pref) {
             pref.innerHTML = `<option value="none">Ninguna</option>` + options;
         }
         
