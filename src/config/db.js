@@ -153,6 +153,58 @@ const initializeDatabase = async () => {
             )
         `);
 
+        // Asegurar columnas de reservas si la tabla ya existía con esquema anterior
+        const [reservasCols] = await promisePool.query(`SHOW COLUMNS FROM reservas`);
+        const reservasColNames = reservasCols.map(c => c.Field);
+        if (!reservasColNames.includes('total')) {
+            await promisePool.query('ALTER TABLE reservas ADD COLUMN total DECIMAL(12,2) DEFAULT 0');
+            console.log('  ✅ Columna total agregada a reservas');
+        }
+        if (!reservasColNames.includes('metodo_pago')) {
+            await promisePool.query('ALTER TABLE reservas ADD COLUMN metodo_pago VARCHAR(50) DEFAULT "efectivo"');
+            console.log('  ✅ Columna metodo_pago agregada a reservas');
+        }
+        if (!reservasColNames.includes('horas_alquiladas')) {
+            await promisePool.query('ALTER TABLE reservas ADD COLUMN horas_alquiladas INT NOT NULL DEFAULT 1');
+            console.log('  ✅ Columna horas_alquiladas agregada a reservas');
+        }
+        if (!reservasColNames.includes('balones_prestados')) {
+            await promisePool.query('ALTER TABLE reservas ADD COLUMN balones_prestados INT DEFAULT 0');
+            console.log('  ✅ Columna balones_prestados agregada a reservas');
+        }
+        if (!reservasColNames.includes('petos_rojos_prestados')) {
+            await promisePool.query('ALTER TABLE reservas ADD COLUMN petos_rojos_prestados INT DEFAULT 0');
+            console.log('  ✅ Columna petos_rojos_prestados agregada a reservas');
+        }
+        if (!reservasColNames.includes('petos_azules_prestados')) {
+            await promisePool.query('ALTER TABLE reservas ADD COLUMN petos_azules_prestados INT DEFAULT 0');
+            console.log('  ✅ Columna petos_azules_prestados agregada a reservas');
+        }
+        if (!reservasColNames.includes('estado')) {
+            await promisePool.query("ALTER TABLE reservas ADD COLUMN estado ENUM('activa', 'finalizada', 'cancelada') DEFAULT 'activa'");
+            console.log('  ✅ Columna estado agregada a reservas');
+        }
+        if (!reservasColNames.includes('fecha_creacion')) {
+            await promisePool.query('ALTER TABLE reservas ADD COLUMN fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+            console.log('  ✅ Columna fecha_creacion agregada a reservas');
+        }
+
+        // Asegurar columnas de pedidos si la tabla ya existía con esquema anterior
+        const [pedidosCols] = await promisePool.query(`SHOW COLUMNS FROM pedidos`);
+        const pedidosColNames = pedidosCols.map(c => c.Field);
+        if (!pedidosColNames.includes('nombre_cliente')) {
+            await promisePool.query('ALTER TABLE pedidos ADD COLUMN nombre_cliente VARCHAR(100)');
+            console.log('  ✅ Columna nombre_cliente agregada a pedidos');
+        }
+        if (!pedidosColNames.includes('metodo_pago')) {
+            await promisePool.query('ALTER TABLE pedidos ADD COLUMN metodo_pago VARCHAR(50) DEFAULT "efectivo"');
+            console.log('  ✅ Columna metodo_pago agregada a pedidos');
+        }
+        if (!pedidosColNames.includes('fecha_creacion')) {
+            await promisePool.query('ALTER TABLE pedidos ADD COLUMN fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+            console.log('  ✅ Columna fecha_creacion agregada a pedidos');
+        }
+
         // Asegurar AUTO_INCREMENT en todas las tablas por si fueron creadas sin él en entornos previos (como en Render)
         const tablesToAutoIncrement = ['usuarios', 'canchas', 'productos', 'pedidos', 'pedido_detalle', 'reservas', 'inventario'];
         for (const table of tablesToAutoIncrement) {
