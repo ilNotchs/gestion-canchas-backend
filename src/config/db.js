@@ -123,6 +123,36 @@ const initializeDatabase = async () => {
             )
         `);
 
+        // Tabla de reservas de canchas
+        await promisePool.query(`
+            CREATE TABLE IF NOT EXISTS reservas (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre_cliente VARCHAR(100) NOT NULL,
+                cancha_id INT NOT NULL,
+                fecha_reserva DATE NOT NULL,
+                hora_inicio TIME NOT NULL,
+                horas_alquiladas INT NOT NULL DEFAULT 1,
+                balones_prestados INT DEFAULT 0,
+                petos_rojos_prestados INT DEFAULT 0,
+                petos_azules_prestados INT DEFAULT 0,
+                estado ENUM('activa', 'finalizada', 'cancelada') DEFAULT 'activa',
+                metodo_pago VARCHAR(50) DEFAULT 'efectivo',
+                total DECIMAL(12,2) DEFAULT 0,
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Tabla de inventario de implementos deportivos
+        await promisePool.query(`
+            CREATE TABLE IF NOT EXISTS inventario (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                articulo VARCHAR(100) NOT NULL,
+                color VARCHAR(50) DEFAULT NULL,
+                cantidad_total INT NOT NULL DEFAULT 0,
+                cantidad_disponible INT NOT NULL DEFAULT 0
+            )
+        `);
+
         // Ejecutar población automática de datos si faltan registros
         await seeder.autoSeed(promisePool);
 
