@@ -429,8 +429,11 @@ async function renderDashboard() {
         const canchas = state.canchas;
         const res = state.reservasActivas;
         
-        const perc = canchas.length === 0 ? 0 : (res.length / canchas.length) * 100;
-        document.getElementById('dash-ocupacion').innerText = `${perc.toFixed(0)}%`;
+        // Ocupación = reservas activas hoy / (canchas × 8 franjas horarias disponibles)
+        const FRANJAS_DIA = 8;
+        const totalSlotsDia = canchas.length * FRANJAS_DIA;
+        const perc = totalSlotsDia === 0 ? 0 : (res.length / totalSlotsDia) * 100;
+        document.getElementById('dash-ocupacion').innerText = `${Math.min(perc, 100).toFixed(1)}%`;
         
         let totalDinero = 0;
         res.forEach(r => {
@@ -450,11 +453,23 @@ async function renderInventario() {
         
         const contInv = document.getElementById('lista-inventario');
         contInv.innerHTML = inv.map(i => {
+            const enUso = (i.cantidad_total || 0) - (i.cantidad_disponible || 0);
+            const disponible = i.cantidad_disponible || 0;
+            const total = i.cantidad_total || 0;
+            const porcentajeUso = total > 0 ? Math.round((enUso / total) * 100) : 0;
+            const colorDisp = disponible === 0 ? 'var(--danger)' : disponible < total * 0.2 ? 'var(--warning, #f59e0b)' : 'var(--success)';
             return `
-            <div class="stat-card" style="flex-direction:column; align-items:flex-start;">
-                <div style="display:flex; justify-content:space-between; width:100%;">
-                    <h5>${i.articulo} ${i.color ? `(${i.color})` : ''}</h5>
-                    <span style="font-weight:bold; color:var(--success);">${i.cantidad_disponible} unid.</span>
+            <div class="stat-card" style="flex-direction:column; align-items:flex-start; gap:8px;">
+                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                    <h5 style="margin:0;">${i.articulo}${i.color ? ` (${i.color})` : ''}</h5>
+                    <span style="font-size:0.75em; color:var(--text-muted);">Total: ${total}</span>
+                </div>
+                <div style="display:flex; gap:16px; width:100%; font-size:0.85em;">
+                    <span>🔴 <strong style="color:#ef4444;">${enUso}</strong> en uso</span>
+                    <span>🟢 <strong style="color:${colorDisp};">${disponible}</strong> disponibles</span>
+                </div>
+                <div style="width:100%; background:var(--bg-app); border-radius:4px; height:6px; overflow:hidden;">
+                    <div style="height:100%; width:${porcentajeUso}%; background:var(--primary); border-radius:4px; transition:width 0.4s;"></div>
                 </div>
             </div>`;
         }).join('');

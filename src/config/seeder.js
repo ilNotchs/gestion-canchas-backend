@@ -304,16 +304,45 @@ const autoSeed = async (conn) => {
         // ═══════════════════════════════════════════════════════════════════════
         // 2. INVENTARIO (balones, petos)
         // ═══════════════════════════════════════════════════════════════════════
+        // ─── Cantidades necesarias para 45 canchas simultáneas ───────────────────
+        // Máx. 2 balones/cancha → 45×2 + 5 extra = 95
+        // Máx. 10 petos/color/cancha → 45×10 + 30 extra = 480 por color
+        const INV_BALONES   = 95;
+        const INV_PETOS_R   = 480;
+        const INV_PETOS_A   = 480;
+
         const [invCount] = await conn.query('SELECT COUNT(*) as total FROM inventario');
         if (invCount[0].total === 0) {
             console.log('📦 Poblando inventario de implementos...');
             await conn.query(
                 `INSERT INTO inventario (articulo, color, cantidad_total, cantidad_disponible) VALUES 
-                ('Balón', NULL, 30, 30),
-                ('Peto', 'Rojo', 50, 50),
-                ('Peto', 'Azul', 50, 50)`
+                ('Balón', NULL, ?, ?),
+                ('Peto', 'Rojo', ?, ?),
+                ('Peto', 'Azul', ?, ?)`,
+                [INV_BALONES, INV_BALONES, INV_PETOS_R, INV_PETOS_R, INV_PETOS_A, INV_PETOS_A]
             );
-            console.log('  ✅ Inventario de implementos creado');
+            console.log(`  ✅ Inventario creado: ${INV_BALONES} balones, ${INV_PETOS_R} petos rojos, ${INV_PETOS_A} petos azules`);
+        } else {
+            // Actualizar cantidades si son menores a lo requerido (fix para entornos anteriores)
+            const [invRows] = await conn.query('SELECT articulo, color, cantidad_total FROM inventario');
+            for (const row of invRows) {
+                let requiredTotal = 0;
+                if (row.articulo === 'Balón') requiredTotal = INV_BALONES;
+                else if (row.articulo === 'Peto' && row.color === 'Rojo') requiredTotal = INV_PETOS_R;
+                else if (row.articulo === 'Peto' && row.color === 'Azul') requiredTotal = INV_PETOS_A;
+
+                if (requiredTotal > 0 && row.cantidad_total < requiredTotal) {
+                    const diff = requiredTotal - row.cantidad_total;
+                    await conn.query(
+                        `UPDATE inventario 
+                         SET cantidad_total = ?, 
+                             cantidad_disponible = LEAST(cantidad_disponible + ?, ?)
+                         WHERE articulo = ? AND (color = ? OR (color IS NULL AND ? IS NULL))`,
+                        [requiredTotal, diff, requiredTotal, row.articulo, row.color, row.color]
+                    );
+                    console.log(`  🔧 Inventario actualizado: ${row.articulo} ${row.color || ''} → ${requiredTotal} unidades`);
+                }
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════════════
