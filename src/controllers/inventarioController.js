@@ -28,41 +28,48 @@ const obtenerInventario = async (req, res) => {
                 fecha, hora, hora,
                 fecha, hora, hora
             ];
-        } else {
-            queryCondition = `
-                fecha_reserva = CURRENT_DATE()
-                AND CURRENT_TIME() >= hora_inicio
-                AND CURRENT_TIME() < ADDTIME(hora_inicio, SEC_TO_TIME(horas_alquiladas * 3600))
-            `;
-        }
 
-        const [rows] = await db.query(`
-            SELECT 
-                i.id,
-                i.articulo,
-                i.color,
-                i.cantidad_total,
-                COALESCE(u.en_uso, 0) AS en_uso,
-                GREATEST(0, i.cantidad_total - COALESCE(u.en_uso, 0)) AS cantidad_disponible
-            FROM inventario i
-            LEFT JOIN (
-                SELECT 'Balón' AS articulo, NULL AS color, SUM(balones_prestados) AS en_uso 
-                FROM reservas 
-                WHERE estado = 'activa' AND ${queryCondition}
-                UNION ALL
-                SELECT 'Peto', 'Rojo', SUM(petos_rojos_prestados) 
-                FROM reservas 
-                WHERE estado = 'activa' AND ${queryCondition}
-                UNION ALL
-                SELECT 'Peto', 'Azul', SUM(petos_azules_prestados) 
-                FROM reservas 
-                WHERE estado = 'activa' AND ${queryCondition}
-            ) u ON i.articulo = u.articulo 
-                AND (i.color = u.color OR (i.color IS NULL AND u.color IS NULL))
-        `, queryParams);
-        
-        // Enviamos los datos como respuesta en formato JSON
-        res.json(rows);
+            const [rows] = await db.query(`
+                SELECT 
+                    i.id,
+                    i.articulo,
+                    i.color,
+                    i.cantidad_total,
+                    COALESCE(u.en_uso, 0) AS en_uso,
+                    GREATEST(0, i.cantidad_total - COALESCE(u.en_uso, 0)) AS cantidad_disponible
+                FROM inventario i
+                LEFT JOIN (
+                    SELECT 'Balón' AS articulo, NULL AS color, SUM(balones_prestados) AS en_uso 
+                    FROM reservas 
+                    WHERE estado = 'activa' AND ${queryCondition}
+                    UNION ALL
+                    SELECT 'Peto', 'Rojo', SUM(petos_rojos_prestados) 
+                    FROM reservas 
+                    WHERE estado = 'activa' AND ${queryCondition}
+                    UNION ALL
+                    SELECT 'Peto', 'Azul', SUM(petos_azules_prestados) 
+                    FROM reservas 
+                    WHERE estado = 'activa' AND ${queryCondition}
+                ) u ON i.articulo = u.articulo 
+                    AND (i.color = u.color OR (i.color IS NULL AND u.color IS NULL))
+            `, queryParams);
+            
+            res.json(rows);
+        } else {
+            // Para la vista general del dashboard, usamos los valores estáticos de la tabla
+            const [rows] = await db.query(`
+                SELECT 
+                    id,
+                    articulo,
+                    color,
+                    cantidad_total,
+                    (cantidad_total - cantidad_disponible) AS en_uso,
+                    cantidad_disponible
+                FROM inventario
+            `);
+            
+            res.json(rows);
+        }
     } catch (error) {
         console.error(error);
         res.status(500).json({ mensaje: 'Error al obtener el inventario' });

@@ -309,6 +309,10 @@ const autoSeed = async (conn) => {
         const INV_PETOS_R   = 2000;
         const INV_PETOS_A   = 2000;
 
+        const USE_BALONES   = 45;
+        const USE_PETOS_R   = 415;
+        const USE_PETOS_A   = 415;
+
         const [invCount] = await conn.query('SELECT COUNT(*) as total FROM inventario');
         if (invCount[0].total === 0) {
             console.log('📦 Poblando inventario de implementos...');
@@ -317,28 +321,38 @@ const autoSeed = async (conn) => {
                 ('Balón', NULL, ?, ?),
                 ('Peto', 'Rojo', ?, ?),
                 ('Peto', 'Azul', ?, ?)`,
-                [INV_BALONES, INV_BALONES, INV_PETOS_R, INV_PETOS_R, INV_PETOS_A, INV_PETOS_A]
+                [INV_BALONES, INV_BALONES - USE_BALONES, INV_PETOS_R, INV_PETOS_R - USE_PETOS_R, INV_PETOS_A, INV_PETOS_A - USE_PETOS_A]
             );
-            console.log(`  ✅ Inventario creado: ${INV_BALONES} balones, ${INV_PETOS_R} petos rojos, ${INV_PETOS_A} petos azules`);
+            console.log(`  ✅ Inventario creado: ${INV_BALONES} balones (45 en uso), ${INV_PETOS_R} petos rojos (415 en uso), ${INV_PETOS_A} petos azules (415 en uso)`);
         } else {
             // Actualizar cantidades si no coinciden con lo requerido (fix para cambiar de 95/480 a 300/2000)
-            const [invRows] = await conn.query('SELECT articulo, color, cantidad_total FROM inventario');
+            const [invRows] = await conn.query('SELECT articulo, color, cantidad_total, cantidad_disponible FROM inventario');
             for (const row of invRows) {
                 let requiredTotal = 0;
-                if (row.articulo === 'Balón') requiredTotal = INV_BALONES;
-                else if (row.articulo === 'Peto' && row.color === 'Rojo') requiredTotal = INV_PETOS_R;
-                else if (row.articulo === 'Peto' && row.color === 'Azul') requiredTotal = INV_PETOS_A;
+                let requiredUse = 0;
+                if (row.articulo === 'Balón') {
+                    requiredTotal = INV_BALONES;
+                    requiredUse = USE_BALONES;
+                } else if (row.articulo === 'Peto' && row.color === 'Rojo') {
+                    requiredTotal = INV_PETOS_R;
+                    requiredUse = USE_PETOS_R;
+                } else if (row.articulo === 'Peto' && row.color === 'Azul') {
+                    requiredTotal = INV_PETOS_A;
+                    requiredUse = USE_PETOS_A;
+                }
 
-                if (requiredTotal > 0 && row.cantidad_total !== requiredTotal) {
-                    const diff = requiredTotal - row.cantidad_total;
-                    await conn.query(
-                        `UPDATE inventario 
-                         SET cantidad_total = ?, 
-                             cantidad_disponible = GREATEST(0, cantidad_disponible + ?)
-                         WHERE articulo = ? AND (color = ? OR (color IS NULL AND ? IS NULL))`,
-                        [requiredTotal, diff, row.articulo, row.color, row.color]
-                    );
-                    console.log(`  🔧 Inventario actualizado: ${row.articulo} ${row.color || ''} → ${requiredTotal} unidades`);
+                if (requiredTotal > 0) {
+                    const requiredDisp = requiredTotal - requiredUse;
+                    if (row.cantidad_total !== requiredTotal || row.cantidad_disponible !== requiredDisp) {
+                        await conn.query(
+                            `UPDATE inventario 
+                             SET cantidad_total = ?, 
+                                 cantidad_disponible = ?
+                             WHERE articulo = ? AND (color = ? OR (color IS NULL AND ? IS NULL))`,
+                            [requiredTotal, requiredDisp, row.articulo, row.color, row.color]
+                        );
+                        console.log(`  🔧 Inventario actualizado: ${row.articulo} ${row.color || ''} → Total ${requiredTotal}, Disp ${requiredDisp}`);
+                    }
                 }
             }
         }
