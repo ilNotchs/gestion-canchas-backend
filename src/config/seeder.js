@@ -407,9 +407,14 @@ const autoSeed = async (conn) => {
                         const precioCancha = parseFloat(cancha.precio) || (cancha.tipo === '11v11' ? 100000 : 60000);
                         const total = precioCancha * horas;
 
+                        const es11 = cancha.tipo === '11v11';
+                        const bPrestados = 1;
+                        const rPrestados = es11 ? 11 : 7;
+                        const aPrestados = es11 ? 11 : 7;
+
                         reservasBatch.push([
                             cliente.username, cancha.id, fecha, hora, horas,
-                            randomInt(0, 2), randomInt(0, 10), randomInt(0, 10),
+                            bPrestados, rPrestados, aPrestados,
                             estado, metodo, total
                         ]);
 
@@ -554,6 +559,17 @@ const autoSeed = async (conn) => {
         // ═══════════════════════════════════════════════════════════════════════
         // 7. SINCRO DE INVENTARIO (según reservas pico simultáneas para realismo)
         // ═══════════════════════════════════════════════════════════════════════
+        console.log('🔧 Actualizando implementos prestados en reservas existentes para coincidir con la regla...');
+        await conn.query(`
+            UPDATE reservas r
+            JOIN canchas c ON r.cancha_id = c.id
+            SET r.balones_prestados = 1,
+                r.petos_rojos_prestados = IF(c.tipo = '11v11', 11, 7),
+                r.petos_azules_prestados = IF(c.tipo = '11v11', 11, 7)
+            WHERE r.estado = 'activa'
+        `);
+        console.log('  ✅ Reservas existentes actualizadas con éxito');
+
         console.log('🔄 Sincronizando disponibilidad del inventario con las reservas...');
         const [peakRow] = await conn.query(
             `SELECT 
