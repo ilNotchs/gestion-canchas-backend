@@ -161,7 +161,7 @@ const initializeDatabase = async () => {
             console.log('  ✅ Columna total agregada a reservas');
         }
         if (!reservasColNames.includes('metodo_pago')) {
-            await promisePool.query('ALTER TABLE reservas ADD COLUMN metodo_pago VARCHAR(50) DEFAULT "efectivo"');
+            await promisePool.query("ALTER TABLE reservas ADD COLUMN metodo_pago VARCHAR(50) DEFAULT 'efectivo'");
             console.log('  ✅ Columna metodo_pago agregada a reservas');
         }
         if (!reservasColNames.includes('horas_alquiladas')) {
@@ -189,6 +189,14 @@ const initializeDatabase = async () => {
             console.log('  ✅ Columna fecha_creacion agregada a reservas');
         }
 
+        // Asegurar columnas de productos si la tabla ya existía con esquema anterior
+        const [productosCols] = await promisePool.query(`SHOW COLUMNS FROM productos`);
+        const productosColNames = productosCols.map(c => c.Field);
+        if (!productosColNames.includes('estado')) {
+            await promisePool.query("ALTER TABLE productos ADD COLUMN estado ENUM('activo', 'inactivo') DEFAULT 'activo'");
+            console.log('  ✅ Columna estado agregada a productos');
+        }
+
         // Asegurar columnas de pedidos si la tabla ya existía con esquema anterior
         const [pedidosCols] = await promisePool.query(`SHOW COLUMNS FROM pedidos`);
         const pedidosColNames = pedidosCols.map(c => c.Field);
@@ -197,7 +205,7 @@ const initializeDatabase = async () => {
             console.log('  ✅ Columna nombre_cliente agregada a pedidos');
         }
         if (!pedidosColNames.includes('metodo_pago')) {
-            await promisePool.query('ALTER TABLE pedidos ADD COLUMN metodo_pago VARCHAR(50) DEFAULT "efectivo"');
+            await promisePool.query("ALTER TABLE pedidos ADD COLUMN metodo_pago VARCHAR(50) DEFAULT 'efectivo'");
             console.log('  ✅ Columna metodo_pago agregada a pedidos');
         }
         if (!pedidosColNames.includes('fecha_creacion')) {
@@ -207,13 +215,13 @@ const initializeDatabase = async () => {
 
         // Asegurar tipos de columnas correctos (por ejemplo, VARCHAR(50) para metodo_pago en lugar de ENUM limitado)
         try {
-            await promisePool.query('ALTER TABLE reservas MODIFY COLUMN metodo_pago VARCHAR(50) DEFAULT "efectivo"');
+            await promisePool.query("ALTER TABLE reservas MODIFY COLUMN metodo_pago VARCHAR(50) DEFAULT 'efectivo'");
             console.log('  ✅ Tipo de columna metodo_pago verificado en reservas');
         } catch (err) {
             console.error('  ⚠️ No se pudo modificar metodo_pago en reservas:', err.message);
         }
         try {
-            await promisePool.query('ALTER TABLE pedidos MODIFY COLUMN metodo_pago VARCHAR(50) DEFAULT "efectivo"');
+            await promisePool.query("ALTER TABLE pedidos MODIFY COLUMN metodo_pago VARCHAR(50) DEFAULT 'efectivo'");
             console.log('  ✅ Tipo de columna metodo_pago verificado en pedidos');
         } catch (err) {
             console.error('  ⚠️ No se pudo modificar metodo_pago en pedidos:', err.message);

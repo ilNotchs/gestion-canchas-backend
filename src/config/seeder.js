@@ -476,7 +476,7 @@ const autoSeed = async (conn) => {
             console.log(`  ✅ Catálogo de ${PRODUCTOS.length} productos creado`);
         }
 
-        const [productosDisponibles] = await conn.query('SELECT id, nombre, precio, stock FROM productos WHERE estado = "activo"');
+        const [productosDisponibles] = await conn.query("SELECT id, nombre, precio, stock FROM productos WHERE estado = 'activo'");
 
         // ═══════════════════════════════════════════════════════════════════════
         // 6. PEDIDOS/COMPRAS (150)
