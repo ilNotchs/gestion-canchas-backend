@@ -290,15 +290,16 @@ async function enviarReserva() {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...'; btn.disabled = true;
 
     try {
+        // Los implementos (balones, petos rojos, petos azules) se asignan
+        // AUTOMÁTICAMENTE en el backend según el tipo de cancha:
+        //   - 11v11: 1 balón, 11 petos rojos, 11 petos azules
+        //   - 7v7:   1 balón, 7 petos rojos, 7 petos azules
         const payload = {
             usuario_id: state.user.id || 1, nombre_cliente: state.user.username,
             cancha_id: document.getElementById('tipo-cancha').value,
             fecha_reserva: document.getElementById('fecha').value,
             hora_inicio: document.getElementById('hora-seleccionada').value,
             horas_alquiladas: document.getElementById('duracion').value,
-            balones_prestados: document.getElementById('val-balones').innerText,
-            petos_rojos_prestados: document.getElementById('val-petos').innerText,
-            petos_azules_prestados: 0,
             metodo_pago: document.querySelector('input[name="pago"]:checked').value
         };
 
@@ -307,7 +308,8 @@ async function enviarReserva() {
         });
 
         if(res.ok) {
-            showToast("¡Reserva confirmada!", "success");
+            const data = await res.json();
+            showToast(data.mensaje || "¡Reserva confirmada!", "success");
             lanzarConfetti();
             cargarDatosGlobales(); // recarga reservas activas
             setTimeout(() => { btn.innerHTML = 'Confirmar Reserva <i class="fas fa-arrow-right"></i>'; btn.disabled = false; mostrarModulo('mis-reservas'); }, 2000);
@@ -469,7 +471,8 @@ async function renderInventario() {
         
         const contInv = document.getElementById('lista-inventario');
         contInv.innerHTML = inv.map(i => {
-            const enUso = (i.cantidad_total || 0) - (i.cantidad_disponible || 0);
+            // Usamos los campos calculados dinámicamente por el backend
+            const enUso = i.en_uso || 0;
             const disponible = i.cantidad_disponible || 0;
             const total = i.cantidad_total || 0;
             const porcentajeUso = total > 0 ? Math.round((enUso / total) * 100) : 0;

@@ -557,76 +557,31 @@ const autoSeed = async (conn) => {
         }
 
         // ═══════════════════════════════════════════════════════════════════════
-        // 7. SINCRO DE INVENTARIO (según reservas pico simultáneas para realismo)
+        // 7. INVENTARIO DINÁMICO (ya no se sincroniza manualmente)
         // ═══════════════════════════════════════════════════════════════════════
-        console.log('🔧 Actualizando implementos prestados en reservas existentes para coincidir con la regla...');
-        await conn.query(`
+        // La cantidad_disponible ahora se calcula dinámicamente en el endpoint
+        // GET /api/inventario a partir de las reservas activas.
+        // No es necesario actualizar cantidad_disponible en la tabla.
+        
+        // Solo asegurar que las reservas existentes tengan los implementos correctos
+        // según el tipo de cancha (fix de datos legacy)
+        console.log('🔧 Verificando implementos en reservas según tipo de cancha...');
+        const [updResult] = await conn.query(`
             UPDATE reservas r
             JOIN canchas c ON r.cancha_id = c.id
             SET r.balones_prestados = 1,
                 r.petos_rojos_prestados = IF(c.tipo = '11v11', 11, 7),
                 r.petos_azules_prestados = IF(c.tipo = '11v11', 11, 7)
-            WHERE r.estado = 'activa'
+            WHERE (r.balones_prestados != 1 
+                OR r.petos_rojos_prestados != IF(c.tipo = '11v11', 11, 7)
+                OR r.petos_azules_prestados != IF(c.tipo = '11v11', 11, 7))
         `);
-        console.log('  ✅ Reservas existentes actualizadas con éxito');
-
-        console.log('🔄 Sincronizando disponibilidad del inventario con las reservas...');
-        const [peakRow] = await conn.query(
-            `SELECT 
-                fecha_reserva,
-                hora_inicio,
-                SUM(balones_prestados) as balones, 
-                SUM(petos_rojos_prestados) as rojos, 
-                SUM(petos_azules_prestados) as azules 
-             FROM reservas 
-             WHERE estado = 'activa' 
-             GROUP BY fecha_reserva, hora_inicio 
-             ORDER BY (SUM(balones_prestados) + SUM(petos_rojos_prestados)) DESC 
-             LIMIT 1`
-        );
-        
-        let balonesLent = 45; // fallbacks realistas si no hay reservas
-        let rojosLent = 220;
-        let azulesLent = 220;
-        let peakDateStr = "N/A";
-
-        if (peakRow.length > 0) {
-            balonesLent = parseInt(peakRow[0].balones) || 0;
-            rojosLent = parseInt(peakRow[0].rojos) || 0;
-            azulesLent = parseInt(peakRow[0].azules) || 0;
-            
-            let f = peakRow[0].fecha_reserva;
-            if (f instanceof Date) {
-                f = f.toISOString().substring(0, 10);
-            } else {
-                f = String(f).substring(0, 10);
-            }
-            peakDateStr = `${f} ${peakRow[0].hora_inicio}`;
+        if (updResult.affectedRows > 0) {
+            console.log(`  ✅ ${updResult.affectedRows} reservas corregidas con implementos según tipo de cancha`);
+        } else {
+            console.log('  ✅ Implementos de reservas ya están correctos');
         }
-
-        // Actualizar cantidades disponibles en base a lo prestado en el horario pico
-        await conn.query(
-            `UPDATE inventario 
-             SET cantidad_disponible = GREATEST(0, cantidad_total - ?) 
-             WHERE articulo = 'Balón'`,
-            [balonesLent]
-        );
-        await conn.query(
-            `UPDATE inventario 
-             SET cantidad_disponible = GREATEST(0, cantidad_total - ?) 
-             WHERE articulo = 'Peto' AND color = 'Rojo'`,
-            [rojosLent]
-        );
-        await conn.query(
-            `UPDATE inventario 
-             SET cantidad_disponible = GREATEST(0, cantidad_total - ?) 
-             WHERE articulo = 'Peto' AND color = 'Azul'`,
-            [azulesLent]
-        );
-        console.log(`  ✅ Disponibilidad de inventario sincronizada para el horario pico (${peakDateStr}):`);
-        console.log(`     - Balones en uso (pico): ${balonesLent}`);
-        console.log(`     - Petos Rojos en uso (pico): ${rojosLent}`);
-        console.log(`     - Petos Azules en uso (pico): ${azulesLent}`);
+        console.log('  ℹ️  Inventario se calcula dinámicamente desde reservas activas (no requiere sincronización)');
 
         console.log('');
         console.log('═══════════════════════════════════════════════════');

@@ -2,6 +2,13 @@ const db = require('../config/db');
 
 /**
  * Crea una nueva reserva con validación de traslape y stock.
+ * 
+ * Los implementos se asignan AUTOMÁTICAMENTE según el tipo de cancha:
+ *   - 11v11: 11 petos rojos, 11 petos azules, 1 balón
+ *   - 7v7:   7 petos rojos, 7 petos azules, 1 balón
+ * 
+ * La validación de stock se calcula DINÁMICAMENTE:
+ *   disponible = cantidad_total - SUM(implementos en reservas activas)
  */
 const crearReserva = async (req, res) => {
     const conexion = await db.getConnection();
@@ -14,16 +21,10 @@ const crearReserva = async (req, res) => {
             fecha_reserva,
             hora_inicio,
             horas_alquiladas,
-            balones_prestados,
-            petos_rojos_prestados,
-            petos_azules_prestados,
             metodo_pago
         } = req.body;
 
         const duracion = parseInt(horas_alquiladas) || 1;
-        const balones = parseInt(balones_prestados) || 0;
-        const petosRojos = parseInt(petos_rojos_prestados) || 0;
-        const petosAzules = parseInt(petos_azules_prestados) || 0;
 
         // Validaciones básicas
         if (!cancha_id || !fecha_reserva || !hora_inicio) {
@@ -32,7 +33,23 @@ const crearReserva = async (req, res) => {
             });
         }
 
-        // 1. VALIDACIÓN DE TRASLAPE
+        // 1. OBTENER TIPO DE CANCHA para calcular implementos automáticamente
+        const [canchaInfo] = await conexion.query(
+            'SELECT id, tipo FROM canchas WHERE id = ?', [cancha_id]
+        );
+        if (canchaInfo.length === 0) {
+            return res.status(400).json({ mensaje: 'Cancha no encontrada.' });
+        }
+
+        const tipoCancha = canchaInfo[0].tipo;
+        const es11v11 = tipoCancha === '11v11';
+
+        // Asignar implementos según regla de negocio
+        const balones = 1;
+        const petosRojos = es11v11 ? 11 : 7;
+        const petosAzules = es11v11 ? 11 : 7;
+
+        // 2. VALIDACIÓN DE TRASLAPE
         const queryTraslape = `
             SELECT id FROM reservas 
             WHERE cancha_id = ? 
@@ -53,28 +70,70 @@ const crearReserva = async (req, res) => {
             });
         }
 
-        // 2. VALIDACIÓN DE STOCK
-        const [stock] = await conexion.query(
-            'SELECT articulo, color, cantidad_disponible FROM inventario'
-        );
+        // 3. VALIDACIÓN DE STOCK DINÁMICA
+        // Calculamos disponible = total - SUM(en uso por reservas activas que se traslapan en esta franja)
+        const queryStockDinamico = `
+            SELECT 
+                i.articulo,
+                i.color,
+                i.cantidad_total,
+                COALESCE(u.en_uso, 0) AS en_uso,
+                GREATEST(0, i.cantidad_total - COALESCE(u.en_uso, 0)) AS disponible
+            FROM inventario i
+            LEFT JOIN (
+                SELECT 'Balón' AS articulo, NULL AS color, SUM(balones_prestados) AS en_uso 
+                FROM reservas 
+                WHERE estado = 'activa' 
+                  AND fecha_reserva = ?
+                  AND (
+                      hora_inicio < ADDTIME(?, SEC_TO_TIME(? * 3600)) 
+                      AND ADDTIME(hora_inicio, SEC_TO_TIME(horas_alquiladas * 3600)) > ?
+                  )
+                UNION ALL
+                SELECT 'Peto', 'Rojo', SUM(petos_rojos_prestados) 
+                FROM reservas 
+                WHERE estado = 'activa' 
+                  AND fecha_reserva = ?
+                  AND (
+                      hora_inicio < ADDTIME(?, SEC_TO_TIME(? * 3600)) 
+                      AND ADDTIME(hora_inicio, SEC_TO_TIME(horas_alquiladas * 3600)) > ?
+                  )
+                UNION ALL
+                SELECT 'Peto', 'Azul', SUM(petos_azules_prestados) 
+                FROM reservas 
+                WHERE estado = 'activa' 
+                  AND fecha_reserva = ?
+                  AND (
+                      hora_inicio < ADDTIME(?, SEC_TO_TIME(? * 3600)) 
+                      AND ADDTIME(hora_inicio, SEC_TO_TIME(horas_alquiladas * 3600)) > ?
+                  )
+            ) u ON i.articulo = u.articulo 
+                AND (i.color = u.color OR (i.color IS NULL AND u.color IS NULL))
+        `;
 
-        const balonesStock = stock.find(i => i.articulo === 'Balón')?.cantidad_disponible || 0;
-        if (balones > balonesStock) {
+        const [stockDinamico] = await conexion.query(queryStockDinamico, [
+            fecha_reserva, hora_inicio, duracion, hora_inicio,
+            fecha_reserva, hora_inicio, duracion, hora_inicio,
+            fecha_reserva, hora_inicio, duracion, hora_inicio
+        ]);
+
+        const balonesDisp = stockDinamico.find(i => i.articulo === 'Balón')?.disponible || 0;
+        if (balones > balonesDisp) {
             return res.status(400).json({ 
-                mensaje: `Solo quedan ${balonesStock} balones disponibles.` 
+                mensaje: `Solo quedan ${balonesDisp} balones disponibles para este horario.` 
             });
         }
 
-        const rojosStock = stock.find(i => i.articulo === 'Peto' && i.color === 'Rojo')?.cantidad_disponible || 0;
-        const azulesStock = stock.find(i => i.articulo === 'Peto' && i.color === 'Azul')?.cantidad_disponible || 0;
+        const rojosDisp = stockDinamico.find(i => i.articulo === 'Peto' && i.color === 'Rojo')?.disponible || 0;
+        const azulesDisp = stockDinamico.find(i => i.articulo === 'Peto' && i.color === 'Azul')?.disponible || 0;
 
-        if (petosRojos > rojosStock || petosAzules > azulesStock) {
+        if (petosRojos > rojosDisp || petosAzules > azulesDisp) {
             return res.status(400).json({ 
-                mensaje: 'Stock insuficiente de petos.' 
+                mensaje: `Stock insuficiente de petos para este horario. Disponibles: ${rojosDisp} rojos, ${azulesDisp} azules.` 
             });
         }
 
-        // 3. INICIO DE TRANSACCIÓN
+        // 4. INICIO DE TRANSACCIÓN
         await conexion.beginTransaction();
 
         const queryReserva = `
@@ -88,29 +147,12 @@ const crearReserva = async (req, res) => {
             balones, petosRojos, petosAzules, metodo_pago || 'efectivo'
         ]);
 
-        // 4. ACTUALIZACIÓN DE INVENTARIO
-        if (balones > 0) {
-            await conexion.query(
-                "UPDATE inventario SET cantidad_disponible = cantidad_disponible - ? WHERE articulo = 'Balón'",
-                [balones]
-            );
-        }
-        if (petosRojos > 0) {
-            await conexion.query(
-                "UPDATE inventario SET cantidad_disponible = cantidad_disponible - ? WHERE articulo = 'Peto' AND color = 'Rojo'",
-                [petosRojos]
-            );
-        }
-        if (petosAzules > 0) {
-            await conexion.query(
-                "UPDATE inventario SET cantidad_disponible = cantidad_disponible - ? WHERE articulo = 'Peto' AND color = 'Azul'",
-                [petosAzules]
-            );
-        }
+        // NO se actualiza inventario manualmente.
+        // cantidad_disponible se calcula dinámicamente a partir de reservas activas.
 
         await conexion.commit();
         res.status(201).json({ 
-            mensaje: 'Reserva creada exitosamente e inventario actualizado.',
+            mensaje: `Reserva creada exitosamente. Implementos asignados: ${balones} balón, ${petosRojos} petos rojos, ${petosAzules} petos azules.`,
             reservaId: resultado.insertId 
         });
 
@@ -129,7 +171,7 @@ const crearReserva = async (req, res) => {
 const obtenerReservasActivas = async (req, res) => {
     try {
         const [rows] = await db.query(`
-            SELECT r.*, c.nombre as nombre_cancha 
+            SELECT r.*, c.nombre as nombre_cancha, c.tipo as tipo_cancha
             FROM reservas r 
             JOIN canchas c ON r.cancha_id = c.id 
             WHERE r.estado = 'activa'
@@ -149,7 +191,7 @@ const obtenerReservasActivas = async (req, res) => {
 const obtenerTodasReservas = async (req, res) => {
     try {
         const [rows] = await db.query(`
-            SELECT r.*, c.nombre as nombre_cancha 
+            SELECT r.*, c.nombre as nombre_cancha, c.tipo as tipo_cancha
             FROM reservas r 
             JOIN canchas c ON r.cancha_id = c.id 
             ORDER BY r.fecha_reserva DESC, r.hora_inicio DESC
@@ -162,7 +204,9 @@ const obtenerTodasReservas = async (req, res) => {
 };
 
 /**
- * Cancela una reserva y devuelve los implementos al inventario.
+ * Cancela una reserva.
+ * Al cambiar el estado a 'cancelada', los implementos se liberan automáticamente
+ * porque el cálculo dinámico solo cuenta reservas con estado = 'activa'.
  */
 const cancelarReserva = async (req, res) => {
     const conexion = await db.getConnection();
@@ -184,28 +228,12 @@ const cancelarReserva = async (req, res) => {
 
         await conexion.query('UPDATE reservas SET estado = ? WHERE id = ?', ['cancelada', id]);
 
-        // Devolución al inventario
-        if (reserva.balones_prestados > 0) {
-            await conexion.query(
-                "UPDATE inventario SET cantidad_disponible = LEAST(cantidad_total, cantidad_disponible + ?) WHERE articulo = 'Balón'",
-                [reserva.balones_prestados]
-            );
-        }
-        if (reserva.petos_rojos_prestados > 0) {
-            await conexion.query(
-                "UPDATE inventario SET cantidad_disponible = LEAST(cantidad_total, cantidad_disponible + ?) WHERE articulo = 'Peto' AND color = 'Rojo'",
-                [reserva.petos_rojos_prestados]
-            );
-        }
-        if (reserva.petos_azules_prestados > 0) {
-            await conexion.query(
-                "UPDATE inventario SET cantidad_disponible = LEAST(cantidad_total, cantidad_disponible + ?) WHERE articulo = 'Peto' AND color = 'Azul'",
-                [reserva.petos_azules_prestados]
-            );
-        }
+        // NO se actualiza inventario manualmente.
+        // Al cambiar estado a 'cancelada', el cálculo dinámico automáticamente
+        // deja de contar estos implementos como "en uso".
 
         await conexion.commit();
-        res.json({ mensaje: 'Reserva cancelada y artículos devueltos al inventario.' });
+        res.json({ mensaje: 'Reserva cancelada. Implementos liberados automáticamente.' });
 
     } catch (error) {
         if (conexion) await conexion.rollback();
@@ -216,4 +244,45 @@ const cancelarReserva = async (req, res) => {
     }
 };
 
-module.exports = { crearReserva, obtenerReservasActivas, obtenerTodasReservas, cancelarReserva };
+/**
+ * Finaliza una reserva.
+ * Al cambiar el estado a 'finalizada', los implementos se liberan automáticamente
+ * porque el cálculo dinámico solo cuenta reservas con estado = 'activa'.
+ */
+const finalizarReserva = async (req, res) => {
+    const conexion = await db.getConnection();
+    try {
+        await conexion.beginTransaction();
+        const { id } = req.params;
+
+        const [reservaInfo] = await conexion.query('SELECT * FROM reservas WHERE id = ?', [id]);
+        if (reservaInfo.length === 0) {
+            conexion.release();
+            return res.status(404).json({ mensaje: 'Reserva no encontrada' });
+        }
+
+        const reserva = reservaInfo[0];
+        if (reserva.estado !== 'activa') {
+            conexion.release();
+            return res.status(400).json({ mensaje: 'La reserva ya está cancelada o finalizada' });
+        }
+
+        await conexion.query('UPDATE reservas SET estado = ? WHERE id = ?', ['finalizada', id]);
+
+        // NO se actualiza inventario manualmente.
+        // Al cambiar estado a 'finalizada', el cálculo dinámico automáticamente
+        // deja de contar estos implementos como "en uso".
+
+        await conexion.commit();
+        res.json({ mensaje: 'Reserva finalizada. Implementos liberados automáticamente.' });
+
+    } catch (error) {
+        if (conexion) await conexion.rollback();
+        console.error("❌ Error en finalizarReserva:", error);
+        res.status(500).json({ mensaje: 'Error al finalizar la reserva.' });
+    } finally {
+        if (conexion) conexion.release();
+    }
+};
+
+module.exports = { crearReserva, obtenerReservasActivas, obtenerTodasReservas, cancelarReserva, finalizarReserva };
