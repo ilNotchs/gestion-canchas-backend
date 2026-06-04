@@ -304,12 +304,10 @@ const autoSeed = async (conn) => {
         // ═══════════════════════════════════════════════════════════════════════
         // 2. INVENTARIO (balones, petos)
         // ═══════════════════════════════════════════════════════════════════════
-        // ─── Cantidades necesarias para 45 canchas simultáneas ───────────────────
-        // Máx. 2 balones/cancha → 45×2 + 5 extra = 95
-        // Máx. 10 petos/color/cancha → 45×10 + 30 extra = 480 por color
-        const INV_BALONES   = 95;
-        const INV_PETOS_R   = 480;
-        const INV_PETOS_A   = 480;
+        // ─── Cantidades necesarias solicitadas por el usuario ───────────────────
+        const INV_BALONES   = 300;
+        const INV_PETOS_R   = 2000;
+        const INV_PETOS_A   = 2000;
 
         const [invCount] = await conn.query('SELECT COUNT(*) as total FROM inventario');
         if (invCount[0].total === 0) {
@@ -323,7 +321,7 @@ const autoSeed = async (conn) => {
             );
             console.log(`  ✅ Inventario creado: ${INV_BALONES} balones, ${INV_PETOS_R} petos rojos, ${INV_PETOS_A} petos azules`);
         } else {
-            // Actualizar cantidades si son menores a lo requerido (fix para entornos anteriores)
+            // Actualizar cantidades si no coinciden con lo requerido (fix para cambiar de 95/480 a 300/2000)
             const [invRows] = await conn.query('SELECT articulo, color, cantidad_total FROM inventario');
             for (const row of invRows) {
                 let requiredTotal = 0;
@@ -331,14 +329,14 @@ const autoSeed = async (conn) => {
                 else if (row.articulo === 'Peto' && row.color === 'Rojo') requiredTotal = INV_PETOS_R;
                 else if (row.articulo === 'Peto' && row.color === 'Azul') requiredTotal = INV_PETOS_A;
 
-                if (requiredTotal > 0 && row.cantidad_total < requiredTotal) {
+                if (requiredTotal > 0 && row.cantidad_total !== requiredTotal) {
                     const diff = requiredTotal - row.cantidad_total;
                     await conn.query(
                         `UPDATE inventario 
                          SET cantidad_total = ?, 
-                             cantidad_disponible = LEAST(cantidad_disponible + ?, ?)
+                             cantidad_disponible = GREATEST(0, cantidad_disponible + ?)
                          WHERE articulo = ? AND (color = ? OR (color IS NULL AND ? IS NULL))`,
-                        [requiredTotal, diff, requiredTotal, row.articulo, row.color, row.color]
+                        [requiredTotal, diff, row.articulo, row.color, row.color]
                     );
                     console.log(`  🔧 Inventario actualizado: ${row.articulo} ${row.color || ''} → ${requiredTotal} unidades`);
                 }
@@ -552,6 +550,67 @@ const autoSeed = async (conn) => {
             }
             console.log(`  ✅ ${pedidosCreados} compras registradas con éxito`);
         }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // 7. SINCRO DE INVENTARIO (según reservas pico simultáneas para realismo)
+        // ═══════════════════════════════════════════════════════════════════════
+        console.log('🔄 Sincronizando disponibilidad del inventario con las reservas...');
+        const [peakRow] = await conn.query(
+            `SELECT 
+                fecha_reserva,
+                hora_inicio,
+                SUM(balones_prestados) as balones, 
+                SUM(petos_rojos_prestados) as rojos, 
+                SUM(petos_azules_prestados) as azules 
+             FROM reservas 
+             WHERE estado = 'activa' 
+             GROUP BY fecha_reserva, hora_inicio 
+             ORDER BY (SUM(balones_prestados) + SUM(petos_rojos_prestados)) DESC 
+             LIMIT 1`
+        );
+        
+        let balonesLent = 45; // fallbacks realistas si no hay reservas
+        let rojosLent = 220;
+        let azulesLent = 220;
+        let peakDateStr = "N/A";
+
+        if (peakRow.length > 0) {
+            balonesLent = parseInt(peakRow[0].balones) || 0;
+            rojosLent = parseInt(peakRow[0].rojos) || 0;
+            azulesLent = parseInt(peakRow[0].azules) || 0;
+            
+            let f = peakRow[0].fecha_reserva;
+            if (f instanceof Date) {
+                f = f.toISOString().substring(0, 10);
+            } else {
+                f = String(f).substring(0, 10);
+            }
+            peakDateStr = `${f} ${peakRow[0].hora_inicio}`;
+        }
+
+        // Actualizar cantidades disponibles en base a lo prestado en el horario pico
+        await conn.query(
+            `UPDATE inventario 
+             SET cantidad_disponible = GREATEST(0, cantidad_total - ?) 
+             WHERE articulo = 'Balón'`,
+            [balonesLent]
+        );
+        await conn.query(
+            `UPDATE inventario 
+             SET cantidad_disponible = GREATEST(0, cantidad_total - ?) 
+             WHERE articulo = 'Peto' AND color = 'Rojo'`,
+            [rojosLent]
+        );
+        await conn.query(
+            `UPDATE inventario 
+             SET cantidad_disponible = GREATEST(0, cantidad_total - ?) 
+             WHERE articulo = 'Peto' AND color = 'Azul'`,
+            [azulesLent]
+        );
+        console.log(`  ✅ Disponibilidad de inventario sincronizada para el horario pico (${peakDateStr}):`);
+        console.log(`     - Balones en uso (pico): ${balonesLent}`);
+        console.log(`     - Petos Rojos en uso (pico): ${rojosLent}`);
+        console.log(`     - Petos Azules en uso (pico): ${azulesLent}`);
 
         console.log('');
         console.log('═══════════════════════════════════════════════════');

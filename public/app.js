@@ -206,7 +206,7 @@ function recalcularTotal() {
     // Generar horas dinámicas
     const reservasEnFecha = state.reservasActivas.filter(r => r.cancha_id == cancha_id && r.fecha_reserva.substring(0, 10) === fecha);
     
-    const horasDisponibles = ['16:00:00', '17:00:00', '18:00:00', '19:00:00', '20:00:00', '21:00:00', '22:00:00'];
+    const horasDisponibles = ['15:00:00', '16:00:00', '17:00:00', '18:00:00', '19:00:00', '20:00:00', '21:00:00', '22:00:00'];
     const gridHorarios = document.getElementById('grid-horarios');
     
     // Guardar la hora actualmente seleccionada si existe
@@ -429,14 +429,30 @@ async function renderDashboard() {
         const canchas = state.canchas;
         const res = state.reservasActivas;
         
-        // Ocupación = reservas activas hoy / (canchas × 8 franjas horarias disponibles)
+        // Obtener la fecha local en formato YYYY-MM-DD
+        const localDate = new Date();
+        const y = localDate.getFullYear();
+        const m = String(localDate.getMonth() + 1).padStart(2, '0');
+        const d = String(localDate.getDate()).padStart(2, '0');
+        const hoyStr = `${y}-${m}-${d}`;
+
+        // Filtrar reservas que corresponden a HOY
+        let reservasHoy = res.filter(r => r.fecha_reserva.substring(0, 10) === hoyStr);
+
+        // Fallback: si hoy no hay reservas, usar la fecha de la primera reserva disponible
+        if (reservasHoy.length === 0 && res.length > 0) {
+            const primeraFecha = res[0].fecha_reserva.substring(0, 10);
+            reservasHoy = res.filter(r => r.fecha_reserva.substring(0, 10) === primeraFecha);
+        }
+
+        // Ocupación = reservas activas del día / (canchas × 8 franjas horarias disponibles)
         const FRANJAS_DIA = 8;
         const totalSlotsDia = canchas.length * FRANJAS_DIA;
-        const perc = totalSlotsDia === 0 ? 0 : (res.length / totalSlotsDia) * 100;
+        const perc = totalSlotsDia === 0 ? 0 : (reservasHoy.length / totalSlotsDia) * 100;
         document.getElementById('dash-ocupacion').innerText = `${Math.min(perc, 100).toFixed(1)}%`;
         
         let totalDinero = 0;
-        res.forEach(r => {
+        reservasHoy.forEach(r => {
             let precioBase = (r.nombre_cancha && r.nombre_cancha.includes('11v11')) ? 100000 : 60000;
             totalDinero += precioBase * r.horas_alquiladas;
         });
