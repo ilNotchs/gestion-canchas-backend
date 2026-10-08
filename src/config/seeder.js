@@ -414,15 +414,13 @@ const autoSeed = async (conn) => {
         console.log(`  📊 Total canchas en BD: ${todasCanchas.length}`);
 
         // ═══════════════════════════════════════════════════════════════════════
-        // 4. RESERVAS (45 canchas × 8 horarios × 3 días = 1,080)
+        // 4. RESERVAS — Se eliminan todas al iniciar (canchas limpias)
         // ═══════════════════════════════════════════════════════════════════════
-        const [reservasCount] = await conn.query('SELECT COUNT(*) as total FROM reservas');
-        console.log(`📊 Reservas actuales: ${reservasCount[0].total}`);
-        
-        const totalReservasRequeridas = todasCanchas.length * FRANJAS_HORARIAS.length * FECHAS_RESERVAS.length;
-        console.log(`📊 Reservas requeridas para las 3 fechas: ${totalReservasRequeridas} (fechas: ${FECHAS_RESERVAS.join(', ')})`);
-        
-        if (reservasCount[0].total < 1080 && clientUsers.length > 0 && todasCanchas.length > 0) {
+        await conn.query('DELETE FROM reservas');
+        console.log('🗑️  Todas las reservas eliminadas. Las canchas quedan disponibles.');
+
+        // Auto-creación de reservas desactivada: las reservas se crean manualmente.
+        if (false && clientUsers.length > 0 && todasCanchas.length > 0) {
             console.log(`📅 Generando ${totalReservasRequeridas} reservas (${todasCanchas.length} canchas × ${FRANJAS_HORARIAS.length} horarios × ${FECHAS_RESERVAS.length} días)...`);
             let reservasCreadas = 0;
             let reservasBatch = [];
