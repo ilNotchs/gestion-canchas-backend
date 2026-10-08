@@ -250,6 +250,21 @@ const autoSeed = async (conn) => {
         // ═══════════════════════════════════════════════════════════════════════
         const [usersCount] = await conn.query('SELECT COUNT(*) as total FROM usuarios');
         console.log(`📊 Usuarios actuales: ${usersCount[0].total}`);
+
+        // ── Siempre asegurar admin_juan ────────────────────────────────────────
+        const adminJuanHash = await bcrypt.hash('AdminJuan2026!', SALT_ROUNDS);
+        const [existAdminJuan] = await conn.query('SELECT id FROM usuarios WHERE username = ?', ['admin_juan']);
+        if (existAdminJuan.length === 0) {
+            await conn.query(
+                'INSERT INTO usuarios (username, password, rol, email, telefono) VALUES (?, ?, ?, ?, ?)',
+                ['admin_juan', adminJuanHash, 'admin', 'admin_juan@fitcanchas.com', '3001234568']
+            );
+            console.log('  ✅ Usuario admin_juan creado');
+        } else {
+            await conn.query('UPDATE usuarios SET password = ?, rol = ? WHERE username = ?', [adminJuanHash, 'admin', 'admin_juan']);
+            console.log('  ✅ Usuario admin_juan actualizado');
+        }
+        // ───────────────────────────────────────────────────────────────────────
         
         let clientUsers = [];
         if (usersCount[0].total < 10) {
@@ -278,6 +293,18 @@ const autoSeed = async (conn) => {
                 );
             } else {
                 await conn.query('UPDATE usuarios SET password = ?, rol = ? WHERE username = ?', [testHash, 'cliente', 'testuser']);
+            }
+
+            // Cliente1 (para pruebas rápidas)
+            const cliente1Hash = await bcrypt.hash('pass123', SALT_ROUNDS);
+            const [existCliente1] = await conn.query('SELECT id FROM usuarios WHERE username = ?', ['cliente1']);
+            if (existCliente1.length === 0) {
+                await conn.query(
+                    'INSERT INTO usuarios (username, password, rol, email, telefono) VALUES (?, ?, ?, ?, ?)',
+                    ['cliente1', cliente1Hash, 'cliente', 'cliente1@correo.com', '3001112233']
+                );
+            } else {
+                await conn.query('UPDATE usuarios SET password = ?, rol = ? WHERE username = ?', [cliente1Hash, 'cliente', 'cliente1']);
             }
 
             // 30 clientes colombianos
