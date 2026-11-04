@@ -107,7 +107,7 @@ document.getElementById('form-login')?.addEventListener('submit', async (e) => {
         });
         const data = await res.json();
         if(data.success) { localStorage.setItem('usuario', JSON.stringify(data.usuario)); location.reload(); }
-        else { showToast('Credenciales incorrectas', 'error'); btn.disabled = false; btn.innerText = "Iniciar Sesión"; }
+        else { showToast(data.mensaje || 'Credenciales incorrectas', 'error'); btn.disabled = false; btn.innerText = "Iniciar Sesión"; }
     } catch(err) { showToast('Error de servidor', 'error'); btn.disabled = false; btn.innerText = "Iniciar Sesión"; }
 });
 

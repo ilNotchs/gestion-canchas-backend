@@ -414,10 +414,10 @@ const autoSeed = async (conn) => {
         console.log(`  📊 Total canchas en BD: ${todasCanchas.length}`);
 
         // ═══════════════════════════════════════════════════════════════════════
-        // 4. RESERVAS — Se eliminan todas al iniciar (canchas limpias)
+        // 4. RESERVAS — Se conservan entre arranques (no se borran)
         // ═══════════════════════════════════════════════════════════════════════
-        await conn.query('DELETE FROM reservas');
-        console.log('🗑️  Todas las reservas eliminadas. Las canchas quedan disponibles.');
+        const [reservasActuales] = await conn.query('SELECT COUNT(*) as total FROM reservas');
+        console.log(`📊 Reservas actuales: ${reservasActuales[0].total} (se conservan)`);
 
         // Auto-creación de reservas desactivada: las reservas se crean manualmente.
         if (false && clientUsers.length > 0 && todasCanchas.length > 0) {

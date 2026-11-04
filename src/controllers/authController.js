@@ -9,7 +9,9 @@ const SALT_ROUNDS = 10;
  * la verifica como texto plano y luego la re-hashea para futuras sesiones.
  */
 const login = async (req, res) => {
-    const { username, password } = req.body;
+    const { password } = req.body;
+    // Ignora espacios accidentales al inicio/fin del usuario (copia y pega, autocompletado, etc.)
+    const username = typeof req.body.username === 'string' ? req.body.username.trim() : req.body.username;
 
     if (!username || !password) {
         return res.status(400).json({ 
@@ -25,6 +27,7 @@ const login = async (req, res) => {
         );
 
         if (rows.length === 0) {
+            console.log(`🔍 [login] usuario no encontrado: "${username}" (largo ${username.length})`);
             return res.status(401).json({ 
                 success: false, 
                 mensaje: 'Usuario o contraseña incorrectos' 
@@ -64,6 +67,7 @@ const login = async (req, res) => {
                 }
             });
         } else {
+            console.log(`🔍 [login] contraseña incorrecta para "${usuario.username}" (largo enviado ${String(password).length})`);
             res.status(401).json({ 
                 success: false, 
                 mensaje: 'Usuario o contraseña incorrectos' 
