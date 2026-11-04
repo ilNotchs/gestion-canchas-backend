@@ -521,7 +521,7 @@ let productosData = []; // Caché de productos
 
 async function renderTienda() {
     try {
-        const res = await fetch('/api/productos');
+        const res = await fetch('/api/productos?limite=200');
         const data = await res.json();
         productosData = data.productos || [];
         filtrarTienda();
