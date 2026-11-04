@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360" role="img" aria-label="Pechera de entrenamiento amarilla">
+  <rect width="600" height="360" fill="#ffffff"/>
+  <g transform="translate(300 190)">
+    <path d="M-90-95 L-42-115 Q0-95 42-115 L90-95 L118-50 L76-27 L76 118 L-76 118 L-76-27 L-118-50 Z"
+          fill="#f5c518" stroke="#c99a00" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M-42-115 Q0-86 42-115" fill="none" stroke="#c99a00" stroke-width="7"/>
+    <text x="0" y="50" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="58" font-weight="800" fill="#7a5c00" opacity="0.5">10</text>
+  </g>
+</svg>

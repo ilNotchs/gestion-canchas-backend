@@ -543,12 +543,12 @@ function filtrarTienda() {
     grid.innerHTML = filtrados.map(p => {
         const stockClass = p.stock > 10 ? 'stock-ok' : (p.stock > 0 ? 'stock-low' : 'stock-out');
         const stockText = p.stock > 0 ? `${p.stock} disponibles` : 'Agotado';
-        const img = p.imagen_url ? p.imagen_url : 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=300&q=80';
+        const img = p.imagen_url ? p.imagen_url : '/img/productos/placeholder.svg';
         
         return `
         <div class="tienda-card">
             <div class="tienda-img">
-                <img src="${img}" alt="${p.nombre}" onerror="this.src='https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=300&q=80'">
+                <img src="${img}" alt="${p.nombre}" onerror="this.src='/img/productos/placeholder.svg'">
             </div>
             <div class="tienda-content">
                 <h4>${p.nombre}</h4>
@@ -605,7 +605,7 @@ function renderCarrito() {
         return `
         <div class="carrito-item">
             <div class="carrito-img">
-                <img src="${item.imagen_url}" onerror="this.src='https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=300&q=80'">
+                <img src="${item.imagen_url}" onerror="this.src='/img/productos/placeholder.svg'">
             </div>
             <div class="carrito-info">
                 <h5>${item.nombre}</h5>
