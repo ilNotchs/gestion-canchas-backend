@@ -22,56 +22,50 @@ const obtenerInventario = async (req, res) => {
                 AND ? >= hora_inicio
                 AND ? < ADDTIME(hora_inicio, SEC_TO_TIME(horas_alquiladas * 3600))
             `;
-            // Three UNION ALL subqueries, each needing [fecha, hora, hora]
             queryParams = [
                 fecha, hora, hora,
                 fecha, hora, hora,
                 fecha, hora, hora
             ];
-
-            const [rows] = await db.query(`
-                SELECT 
-                    i.id,
-                    i.articulo,
-                    i.color,
-                    i.cantidad_total,
-                    COALESCE(u.en_uso, 0) AS en_uso,
-                    GREATEST(0, i.cantidad_total - COALESCE(u.en_uso, 0)) AS cantidad_disponible
-                FROM inventario i
-                LEFT JOIN (
-                    SELECT 'Balón' AS articulo, NULL AS color, SUM(balones_prestados) AS en_uso 
-                    FROM reservas 
-                    WHERE estado = 'activa' AND ${queryCondition}
-                    UNION ALL
-                    SELECT 'Peto', 'Rojo', SUM(petos_rojos_prestados) 
-                    FROM reservas 
-                    WHERE estado = 'activa' AND ${queryCondition}
-                    UNION ALL
-                    SELECT 'Peto', 'Azul', SUM(petos_azules_prestados) 
-                    FROM reservas 
-                    WHERE estado = 'activa' AND ${queryCondition}
-                ) u ON i.articulo = u.articulo 
-                    AND (i.color = u.color OR (i.color IS NULL AND u.color IS NULL))
-            `, queryParams);
-            
-            res.json(rows);
         } else {
-            // Para la vista general del dashboard, usamos los valores estáticos de la tabla
-            const [rows] = await db.query(`
-                SELECT 
-                    id,
-                    articulo,
-                    color,
-                    cantidad_total,
-                    (cantidad_total - cantidad_disponible) AS en_uso,
-                    cantidad_disponible
-                FROM inventario
-            `);
-            
-            res.json(rows);
+            // Para la vista general, calcular según la fecha y hora actuales reales de las reservas activas
+            queryCondition = `
+                fecha_reserva = CURDATE()
+                AND CURTIME() >= hora_inicio
+                AND CURTIME() < ADDTIME(hora_inicio, SEC_TO_TIME(horas_alquiladas * 3600))
+            `;
+            queryParams = [];
         }
+
+        const [rows] = await db.query(`
+            SELECT 
+                i.id,
+                i.articulo,
+                i.color,
+                i.cantidad_total,
+                COALESCE(u.en_uso, 0) AS en_uso,
+                GREATEST(0, i.cantidad_total - COALESCE(u.en_uso, 0)) AS cantidad_disponible
+            FROM inventario i
+            LEFT JOIN (
+                SELECT 'Balón' AS articulo, NULL AS color, COALESCE(SUM(balones_prestados), 0) AS en_uso 
+                FROM reservas 
+                WHERE estado = 'activa' AND ${queryCondition}
+                UNION ALL
+                SELECT 'Peto', 'Rojo', COALESCE(SUM(petos_rojos_prestados), 0) AS en_uso 
+                FROM reservas 
+                WHERE estado = 'activa' AND ${queryCondition}
+                UNION ALL
+                SELECT 'Peto', 'Azul', COALESCE(SUM(petos_azules_prestados), 0) AS en_uso 
+                FROM reservas 
+                WHERE estado = 'activa' AND ${queryCondition}
+            ) u ON i.articulo = u.articulo 
+                AND (i.color = u.color OR (i.color IS NULL AND u.color IS NULL))
+            ORDER BY i.id ASC
+        `, queryParams);
+        
+        res.json(rows);
     } catch (error) {
-        console.error(error);
+        console.error("❌ Error en obtenerInventario:", error);
         res.status(500).json({ mensaje: 'Error al obtener el inventario' });
     }
 };

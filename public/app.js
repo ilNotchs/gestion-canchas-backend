@@ -465,97 +465,121 @@ async function renderDashboard() {
 }
 
 let inventarioData = [];
+let canchasInventarioRenderizadas = false;
 
 async function renderInventario() {
     if(state.user?.rol !== 'admin') return;
     try {
+        // Renderizar canchas primero o en paralelo
+        renderCanchasInventario();
+
         const res = await fetch('/api/inventario');
         const inv = await res.json();
         inventarioData = inv;
+        renderImplementos(inv);
+    } catch(e) { console.error("Error en renderInventario:", e); }
+}
+
+function renderImplementos(inv) {
+    const contInv = document.getElementById('lista-inventario');
+    if (!contInv) return;
+
+    contInv.innerHTML = inv.map(i => {
+        const enUso = i.en_uso || 0;
+        const total = i.cantidad_total || 0;
+        const disponible = Math.max(0, total - enUso);
+        const porcentajeUso = total > 0 ? Math.round((enUso / total) * 100) : 0;
+        const colorDisp = disponible === 0 ? 'var(--danger)' : disponible < total * 0.2 ? 'var(--warning, #f59e0b)' : 'var(--success)';
         
-        // ── 1. RENDERIZAR IMPLEMENTOS EN BODEGA (Balones, Petos, Infladores, etc.) ──
-        const contInv = document.getElementById('lista-inventario');
-        contInv.innerHTML = inv.map(i => {
-            const enUso = i.en_uso || 0;
-            const disponible = i.cantidad_disponible || 0;
-            const total = i.cantidad_total || 0;
-            const porcentajeUso = total > 0 ? Math.round((enUso / total) * 100) : 0;
-            const colorDisp = disponible === 0 ? 'var(--danger)' : disponible < total * 0.2 ? 'var(--warning, #f59e0b)' : 'var(--success)';
-            
-            // Icono según artículo
-            let icon = 'fa-cube';
-            const artLower = i.articulo.toLowerCase();
-            if (artLower.includes('balón') || artLower.includes('balon')) icon = 'fa-futbol';
-            else if (artLower.includes('peto')) icon = 'fa-tshirt';
-            else if (artLower.includes('inflador')) icon = 'fa-wind';
-            else if (artLower.includes('cono')) icon = 'fa-traffic-cone';
+        let icon = 'fa-cube';
+        const artLower = i.articulo.toLowerCase();
+        if (artLower.includes('balón') || artLower.includes('balon')) icon = 'fa-futbol';
+        else if (artLower.includes('peto')) icon = 'fa-tshirt';
+        else if (artLower.includes('inflador')) icon = 'fa-wind';
+        else if (artLower.includes('cono')) icon = 'fa-traffic-cone';
 
-            return `
-            <div class="stat-card" style="flex-direction:column; align-items:flex-start; gap:10px; position:relative;">
-                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <i class="fas ${icon}" style="color:var(--accent); font-size:1.1em;"></i>
-                        <h5 style="margin:0; font-weight:700;">${i.articulo}${i.color ? ` (${i.color})` : ''}</h5>
-                    </div>
-                    <div class="inv-controls">
-                        <button class="btn-inv-mini" title="Disminuir total en 1" onclick="ajustarStockRapido(${i.id}, -1)">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                        <button class="btn-inv-mini" title="Aumentar total en 1" onclick="ajustarStockRapido(${i.id}, 1)">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                        <button class="btn-inv-mini" title="Editar cantidad" onclick="abrirModalStock(${i.id}, '${i.articulo}${i.color ? ' ' + i.color : ''}', ${total})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn-inv-mini" style="color:var(--danger);" title="Eliminar artículo" onclick="eliminarImplemento(${i.id}, '${i.articulo}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+        return `
+        <div class="stat-card" id="inv-card-${i.id}" style="flex-direction:column; align-items:flex-start; gap:10px; position:relative;">
+            <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fas ${icon}" style="color:var(--accent); font-size:1.1em;"></i>
+                    <h5 style="margin:0; font-weight:700;">${i.articulo}${i.color ? ` (${i.color})` : ''}</h5>
                 </div>
-                <div style="display:flex; justify-content:space-between; width:100%; font-size:0.85em;">
-                    <span style="color:var(--text-muted);">Stock Total: <strong style="color:var(--text-main);">${total}</strong></span>
-                    <span>🔴 <strong style="color:#ef4444;">${enUso}</strong> en uso</span>
-                    <span>🟢 <strong style="color:${colorDisp};">${disponible}</strong> disp.</span>
+                <div class="inv-controls">
+                    <button class="btn-inv-mini" title="Disminuir total en 1" onclick="ajustarStockRapido(${i.id}, -1)">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="btn-inv-mini" title="Aumentar total en 1" onclick="ajustarStockRapido(${i.id}, 1)">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="btn-inv-mini" title="Editar cantidad" onclick="abrirModalStock(${i.id}, '${i.articulo}${i.color ? ' ' + i.color : ''}', ${total})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-inv-mini" style="color:var(--danger);" title="Eliminar artículo" onclick="eliminarImplemento(${i.id}, '${i.articulo}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
-                <div style="width:100%; background:var(--bg-app); border-radius:4px; height:6px; overflow:hidden;">
-                    <div style="height:100%; width:${porcentajeUso}%; background:var(--primary); border-radius:4px; transition:width 0.4s;"></div>
-                </div>
-            </div>`;
-        }).join('');
+            </div>
+            <div style="display:flex; justify-content:space-between; width:100%; font-size:0.85em;">
+                <span style="color:var(--text-muted);">Stock Total: <strong id="inv-total-${i.id}" style="color:var(--text-main);">${total}</strong></span>
+                <span>🔴 <strong style="color:#ef4444;">${enUso}</strong> en uso</span>
+                <span>🟢 <strong id="inv-disp-${i.id}" style="color:${colorDisp};">${disponible}</strong> disp.</span>
+            </div>
+            <div style="width:100%; background:var(--bg-app); border-radius:4px; height:6px; overflow:hidden;">
+                <div id="inv-bar-${i.id}" style="height:100%; width:${porcentajeUso}%; background:var(--primary); border-radius:4px; transition:width 0.3s;"></div>
+            </div>
+        </div>`;
+    }).join('');
+}
 
-        // ── 2. RENDERIZAR CANCHAS AGRUPADAS POR TIPO Y ORDENADAS POR NOMBRE ──
-        const contCanAgrupadas = document.getElementById('lista-canchas-agrupadas');
-        
-        // Identificar tipos únicos de canchas (ej: 11v11, 7v7)
-        const tipos = [...new Set(state.canchas.map(c => c.tipo))].sort((a, b) => {
-            // Ponemos 11v11 primero y luego 7v7
-            if (a.includes('11') && !b.includes('11')) return -1;
-            if (!a.includes('11') && b.includes('11')) return 1;
-            return a.localeCompare(b);
-        });
+function renderCanchasInventario() {
+    const contCanAgrupadas = document.getElementById('lista-canchas-agrupadas');
+    if (!contCanAgrupadas) return;
 
-        if (tipos.length === 0) {
-            contCanAgrupadas.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">No hay canchas registradas en el sistema.</div>';
-            return;
+    if (!state.canchas || state.canchas.length === 0) {
+        contCanAgrupadas.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">No hay canchas registradas en el sistema.</div>';
+        return;
+    }
+
+    // Indexar reservas activas en O(1) usando un Map
+    const reservasPorCancha = new Map();
+    if (state.reservasActivas && state.reservasActivas.length > 0) {
+        for (let idx = 0; idx < state.reservasActivas.length; idx++) {
+            const r = state.reservasActivas[idx];
+            const list = reservasPorCancha.get(r.cancha_id);
+            if (list) {
+                list.push(r);
+            } else {
+                reservasPorCancha.set(r.cancha_id, [r]);
+            }
         }
+    }
 
-        contCanAgrupadas.innerHTML = tipos.map(tipo => {
-            // Filtrar canchas de este tipo y ordenarlas con orden natural (Cancha 1, Cancha 2, ... Cancha 10)
-            const canchasDelTipo = state.canchas
-                .filter(c => c.tipo === tipo)
-                .sort((a, b) => a.nombre.localeCompare(b.nombre, undefined, { numeric: true, sensitivity: 'base' }));
+    // Identificar tipos de canchas (11v11 primero, luego 7v7)
+    const tipos = [...new Set(state.canchas.map(c => c.tipo))].sort((a, b) => {
+        if (a.includes('11') && !b.includes('11')) return -1;
+        if (!a.includes('11') && b.includes('11')) return 1;
+        return a.localeCompare(b);
+    });
 
-            const totalEnTipo = canchasDelTipo.length;
-            const es11 = tipo.toLowerCase().includes('11');
-            const iconoTipo = es11 ? 'fa-futbol' : 'fa-bolt';
-            const badgeLabel = es11 ? 'Fútbol 11 (11 vs 11)' : 'Fútbol 7 (7 vs 7)';
+    const htmlGrupos = tipos.map(tipo => {
+        const canchasDelTipo = state.canchas
+            .filter(c => c.tipo === tipo)
+            .sort((a, b) => a.nombre.localeCompare(b.nombre, undefined, { numeric: true, sensitivity: 'base' }));
 
-            const cardsHTML = canchasDelTipo.map(cancha => {
-                const reservasAgenda = state.reservasActivas.filter(r => r.cancha_id === cancha.id);
-                const estaOcupada = reservasAgenda.length > 0;
-                const precio = cancha.precio_hora || cancha.precio || (es11 ? 100000 : 60000);
-                
-                let agendaHTML = estaOcupada ? reservasAgenda.map(r => `
+        const totalEnTipo = canchasDelTipo.length;
+        const es11 = tipo.toLowerCase().includes('11');
+        const iconoTipo = es11 ? 'fa-futbol' : 'fa-bolt';
+        const badgeLabel = es11 ? 'Fútbol 11 (11 vs 11)' : 'Fútbol 7 (7 vs 7)';
+
+        const cardsHTML = canchasDelTipo.map(cancha => {
+            const reservasAgenda = reservasPorCancha.get(cancha.id) || [];
+            const estaOcupada = reservasAgenda.length > 0;
+            const precio = cancha.precio_hora || cancha.precio || (es11 ? 100000 : 60000);
+            
+            let agendaHTML = '';
+            if (estaOcupada) {
+                agendaHTML = reservasAgenda.map(r => `
                     <div style="background:var(--bg-app); padding:8px; border-radius:6px; margin-top:5px; display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <span style="font-size:0.85em; font-weight:600;">👤 ${r.nombre_cliente}</span><br>
@@ -565,53 +589,57 @@ async function renderInventario() {
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                `).join('') : '<p style="font-size:0.8em; color:var(--text-muted); margin-top:6px;"><i class="fas fa-check-circle" style="color:var(--success); margin-right:4px;"></i>Libre actualmente</p>';
-
-                return `
-                    <div class="reserva-card cancha-card-admin" style="border-top: 3px solid ${estaOcupada ? 'var(--danger)' : 'var(--success)'};">
-                        <div>
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
-                                <h4 style="margin:0; font-size:1.05em; font-weight:700;">${cancha.nombre}</h4>
-                                <span class="badge ${estaOcupada ? 'cancelada' : 'activa'}" style="font-size:0.7em;">
-                                    ${estaOcupada ? 'Ocupada' : 'Disponible'}
-                                </span>
-                            </div>
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                                <span class="cancha-precio-tag">${formatearDinero(precio)} / hora</span>
-                                <span style="font-size:0.75em; color:var(--text-muted); font-weight:600;">${cancha.tipo}</span>
-                            </div>
-                            <div>${agendaHTML}</div>
-                        </div>
-
-                        <div style="display:flex; gap:8px; margin-top:14px; padding-top:10px; border-top:1px solid var(--border);">
-                            <button class="btn-outline" style="padding:6px 10px; font-size:0.8em;" onclick='editarCancha(${JSON.stringify(cancha).replace(/'/g, "\\'")})'>
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button class="btn-outline danger" style="padding:6px 10px; font-size:0.8em;" onclick="eliminarCancha(${cancha.id}, '${cancha.nombre}')">
-                                <i class="fas fa-trash"></i> Eliminar
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+                `).join('');
+            } else {
+                agendaHTML = '<p style="font-size:0.8em; color:var(--text-muted); margin-top:6px;"><i class="fas fa-check-circle" style="color:var(--success); margin-right:4px;"></i>Libre actualmente</p>';
+            }
 
             return `
-                <div class="grupo-canchas-seccion">
-                    <div class="grupo-canchas-header">
-                        <div class="grupo-canchas-title">
-                            <i class="fas ${iconoTipo}" style="color:var(--accent);"></i>
-                            <span>Canchas ${badgeLabel}</span>
+                <div class="reserva-card cancha-card-admin" style="border-top: 3px solid ${estaOcupada ? 'var(--danger)' : 'var(--success)'};">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                            <h4 style="margin:0; font-size:1.05em; font-weight:700;">${cancha.nombre}</h4>
+                            <span class="badge ${estaOcupada ? 'cancelada' : 'activa'}" style="font-size:0.7em;">
+                                ${estaOcupada ? 'Ocupada' : 'Disponible'}
+                            </span>
                         </div>
-                        <span class="badge activa" style="font-size:0.8em;">${totalEnTipo} canchas disponibles</span>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <span class="cancha-precio-tag">${formatearDinero(precio)} / hora</span>
+                            <span style="font-size:0.75em; color:var(--text-muted); font-weight:600;">${cancha.tipo}</span>
+                        </div>
+                        <div>${agendaHTML}</div>
                     </div>
-                    <div class="reservas-grid">
-                        ${cardsHTML}
+
+                    <div style="display:flex; gap:8px; margin-top:14px; padding-top:10px; border-top:1px solid var(--border);">
+                        <button class="btn-outline" style="padding:6px 10px; font-size:0.8em;" onclick='editarCancha(${JSON.stringify(cancha).replace(/'/g, "\\'")})'>
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn-outline danger" style="padding:6px 10px; font-size:0.8em;" onclick="eliminarCancha(${cancha.id}, '${cancha.nombre}')">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
                     </div>
                 </div>
             `;
         }).join('');
 
-    } catch(e) { console.error("Error en renderInventario:", e); }
+        return `
+            <div class="grupo-canchas-seccion">
+                <div class="grupo-canchas-header">
+                    <div class="grupo-canchas-title">
+                        <i class="fas ${iconoTipo}" style="color:var(--accent);"></i>
+                        <span>Canchas ${badgeLabel}</span>
+                    </div>
+                    <span class="badge activa" style="font-size:0.8em;">${totalEnTipo} canchas</span>
+                </div>
+                <div class="reservas-grid">
+                    ${cardsHTML}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    contCanAgrupadas.innerHTML = htmlGrupos;
+    canchasInventarioRenderizadas = true;
 }
 
 // ─── GESTIÓN DE CANCHAS (ADMIN) ───
@@ -801,8 +829,28 @@ async function ajustarStockRapido(id, diff) {
     if (!item) return;
 
     const nuevaCant = Math.max(0, item.cantidad_total + diff);
+    item.cantidad_total = nuevaCant;
+
+    // Actualización instantánea en el DOM (Optimistic UI)
+    const totalEl = document.getElementById(`inv-total-${id}`);
+    const dispEl = document.getElementById(`inv-disp-${id}`);
+    const barEl = document.getElementById(`inv-bar-${id}`);
+
+    const enUso = item.en_uso || 0;
+    const disponible = Math.max(0, nuevaCant - enUso);
+    const porcentajeUso = nuevaCant > 0 ? Math.round((enUso / nuevaCant) * 100) : 0;
+    const colorDisp = disponible === 0 ? 'var(--danger)' : disponible < nuevaCant * 0.2 ? 'var(--warning, #f59e0b)' : 'var(--success)';
+
+    if (totalEl) totalEl.innerText = nuevaCant;
+    if (dispEl) {
+        dispEl.innerText = disponible;
+        dispEl.style.color = colorDisp;
+    }
+    if (barEl) barEl.style.width = `${porcentajeUso}%`;
+
+    // Persistir en backend
     try {
-        const res = await fetch(`/api/inventario/${id}`, {
+        await fetch(`/api/inventario/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -811,11 +859,8 @@ async function ajustarStockRapido(id, diff) {
             },
             body: JSON.stringify({ cantidad_total: nuevaCant })
         });
-        if (res.ok) {
-            renderInventario();
-        }
     } catch(err) {
-        console.error(err);
+        console.error("Error al actualizar stock rápido:", err);
     }
 }
 
