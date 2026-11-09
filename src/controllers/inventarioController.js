@@ -76,6 +76,87 @@ const obtenerInventario = async (req, res) => {
     }
 };
 
+/**
+ * Actualizar un artículo del inventario (Admin).
+ * Permite cambiar cantidad_total y cantidad_disponible.
+ */
+const actualizarInventario = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { cantidad_total } = req.body;
+
+        const [existente] = await db.query('SELECT * FROM inventario WHERE id = ?', [id]);
+        if (existente.length === 0) {
+            return res.status(404).json({ mensaje: 'Artículo no encontrado.' });
+        }
+
+        if (cantidad_total !== undefined && (isNaN(cantidad_total) || parseInt(cantidad_total) < 0)) {
+            return res.status(400).json({ mensaje: 'La cantidad debe ser un número mayor o igual a 0.' });
+        }
+
+        const nuevaCantTotal = cantidad_total !== undefined ? parseInt(cantidad_total) : existente[0].cantidad_total;
+        // Actualizar también cantidad_disponible proporcionalmente
+        const diff = nuevaCantTotal - existente[0].cantidad_total;
+        const nuevaCantDisp = Math.max(0, existente[0].cantidad_disponible + diff);
+
+        await db.query(
+            'UPDATE inventario SET cantidad_total = ?, cantidad_disponible = ? WHERE id = ?',
+            [nuevaCantTotal, nuevaCantDisp, id]
+        );
+
+        res.json({ success: true, mensaje: 'Inventario actualizado exitosamente.' });
+    } catch (error) {
+        console.error("❌ Error en actualizarInventario:", error);
+        res.status(500).json({ mensaje: 'Error al actualizar el inventario.' });
+    }
+};
+
+/**
+ * Crear un nuevo artículo en el inventario (Admin).
+ */
+const crearArticuloInventario = async (req, res) => {
+    try {
+        const { articulo, color, cantidad_total } = req.body;
+        if (!articulo) {
+            return res.status(400).json({ mensaje: 'El nombre del artículo es obligatorio.' });
+        }
+        const cantidad = parseInt(cantidad_total) || 0;
+        const [resultado] = await db.query(
+            'INSERT INTO inventario (articulo, color, cantidad_total, cantidad_disponible) VALUES (?, ?, ?, ?)',
+            [articulo.trim(), color || null, cantidad, cantidad]
+        );
+        res.status(201).json({
+            success: true,
+            mensaje: 'Artículo agregado al inventario.',
+            articulo: { id: resultado.insertId, articulo, color, cantidad_total: cantidad }
+        });
+    } catch (error) {
+        console.error("❌ Error en crearArticuloInventario:", error);
+        res.status(500).json({ mensaje: 'Error al crear el artículo.' });
+    }
+};
+
+/**
+ * Eliminar un artículo del inventario (Admin).
+ */
+const eliminarArticuloInventario = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [existente] = await db.query('SELECT id FROM inventario WHERE id = ?', [id]);
+        if (existente.length === 0) {
+            return res.status(404).json({ mensaje: 'Artículo no encontrado.' });
+        }
+        await db.query('DELETE FROM inventario WHERE id = ?', [id]);
+        res.json({ success: true, mensaje: 'Artículo eliminado del inventario.' });
+    } catch (error) {
+        console.error("❌ Error en eliminarArticuloInventario:", error);
+        res.status(500).json({ mensaje: 'Error al eliminar el artículo.' });
+    }
+};
+
 module.exports = {
-    obtenerInventario
+    obtenerInventario,
+    actualizarInventario,
+    crearArticuloInventario,
+    eliminarArticuloInventario
 };

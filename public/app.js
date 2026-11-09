@@ -59,6 +59,7 @@ function mostrarModulo(id) {
     if(id === 'inventario') renderInventario();
     if(id === 'admin-productos') renderAdminProductos();
     if(id === 'admin-caja') renderAdminCaja();
+    if(id === 'admin-usuarios') renderAdminUsuarios();
     if(id === 'tienda') renderTienda();
     if(id === 'carrito') renderCarrito();
     if(id === 'mis-compras') renderMisCompras();
@@ -463,29 +464,58 @@ async function renderDashboard() {
     } catch(e) { console.error(e); }
 }
 
+let inventarioData = [];
+
 async function renderInventario() {
     if(state.user?.rol !== 'admin') return;
     try {
         const res = await fetch('/api/inventario');
         const inv = await res.json();
+        inventarioData = inv;
         
+        // ── 1. RENDERIZAR IMPLEMENTOS EN BODEGA (Balones, Petos, Infladores, etc.) ──
         const contInv = document.getElementById('lista-inventario');
         contInv.innerHTML = inv.map(i => {
-            // Usamos los campos calculados dinámicamente por el backend
             const enUso = i.en_uso || 0;
             const disponible = i.cantidad_disponible || 0;
             const total = i.cantidad_total || 0;
             const porcentajeUso = total > 0 ? Math.round((enUso / total) * 100) : 0;
             const colorDisp = disponible === 0 ? 'var(--danger)' : disponible < total * 0.2 ? 'var(--warning, #f59e0b)' : 'var(--success)';
+            
+            // Icono según artículo
+            let icon = 'fa-cube';
+            const artLower = i.articulo.toLowerCase();
+            if (artLower.includes('balón') || artLower.includes('balon')) icon = 'fa-futbol';
+            else if (artLower.includes('peto')) icon = 'fa-tshirt';
+            else if (artLower.includes('inflador')) icon = 'fa-wind';
+            else if (artLower.includes('cono')) icon = 'fa-traffic-cone';
+
             return `
-            <div class="stat-card" style="flex-direction:column; align-items:flex-start; gap:8px;">
+            <div class="stat-card" style="flex-direction:column; align-items:flex-start; gap:10px; position:relative;">
                 <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                    <h5 style="margin:0;">${i.articulo}${i.color ? ` (${i.color})` : ''}</h5>
-                    <span style="font-size:0.75em; color:var(--text-muted);">Total: ${total}</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i class="fas ${icon}" style="color:var(--accent); font-size:1.1em;"></i>
+                        <h5 style="margin:0; font-weight:700;">${i.articulo}${i.color ? ` (${i.color})` : ''}</h5>
+                    </div>
+                    <div class="inv-controls">
+                        <button class="btn-inv-mini" title="Disminuir total en 1" onclick="ajustarStockRapido(${i.id}, -1)">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button class="btn-inv-mini" title="Aumentar total en 1" onclick="ajustarStockRapido(${i.id}, 1)">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="btn-inv-mini" title="Editar cantidad" onclick="abrirModalStock(${i.id}, '${i.articulo}${i.color ? ' ' + i.color : ''}', ${total})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-inv-mini" style="color:var(--danger);" title="Eliminar artículo" onclick="eliminarImplemento(${i.id}, '${i.articulo}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
-                <div style="display:flex; gap:16px; width:100%; font-size:0.85em;">
+                <div style="display:flex; justify-content:space-between; width:100%; font-size:0.85em;">
+                    <span style="color:var(--text-muted);">Stock Total: <strong style="color:var(--text-main);">${total}</strong></span>
                     <span>🔴 <strong style="color:#ef4444;">${enUso}</strong> en uso</span>
-                    <span>🟢 <strong style="color:${colorDisp};">${disponible}</strong> disponibles</span>
+                    <span>🟢 <strong style="color:${colorDisp};">${disponible}</strong> disp.</span>
                 </div>
                 <div style="width:100%; background:var(--bg-app); border-radius:4px; height:6px; overflow:hidden;">
                     <div style="height:100%; width:${porcentajeUso}%; background:var(--primary); border-radius:4px; transition:width 0.4s;"></div>
@@ -493,27 +523,474 @@ async function renderInventario() {
             </div>`;
         }).join('');
 
-        const contCan = document.getElementById('lista-canchas');
-        contCan.innerHTML = state.canchas.map(cancha => {
-            const reservasAgenda = state.reservasActivas.filter(r => r.cancha_id === cancha.id);
-            const estaOcupada = reservasAgenda.length > 0;
-            
-            let agendaHTML = estaOcupada ? reservasAgenda.map(r => `
-                <div style="background:var(--bg-app); padding:8px; border-radius:6px; margin-top:5px; display:flex; justify-content:space-between; align-items:center;">
-                    <div><span style="font-size:0.85em;">👤 ${r.nombre_cliente}</span><br><span style="font-size:0.8em; color:var(--text-muted);">⏰ ${r.hora_inicio} (${r.horas_alquiladas}h)</span></div>
-                    <button class="btn-outline danger" style="padding:4px 8px; width:auto;" onclick="pedirCancelacion(${r.id})"><i class="fas fa-times"></i></button>
-                </div>
-            `).join('') : '<p style="font-size:0.8em; color:var(--text-muted); margin-top:5px;">Libre actualmente</p>';
+        // ── 2. RENDERIZAR CANCHAS AGRUPADAS POR TIPO Y ORDENADAS POR NOMBRE ──
+        const contCanAgrupadas = document.getElementById('lista-canchas-agrupadas');
+        
+        // Identificar tipos únicos de canchas (ej: 11v11, 7v7)
+        const tipos = [...new Set(state.canchas.map(c => c.tipo))].sort((a, b) => {
+            // Ponemos 11v11 primero y luego 7v7
+            if (a.includes('11') && !b.includes('11')) return -1;
+            if (!a.includes('11') && b.includes('11')) return 1;
+            return a.localeCompare(b);
+        });
+
+        if (tipos.length === 0) {
+            contCanAgrupadas.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">No hay canchas registradas en el sistema.</div>';
+            return;
+        }
+
+        contCanAgrupadas.innerHTML = tipos.map(tipo => {
+            // Filtrar canchas de este tipo y ordenarlas con orden natural (Cancha 1, Cancha 2, ... Cancha 10)
+            const canchasDelTipo = state.canchas
+                .filter(c => c.tipo === tipo)
+                .sort((a, b) => a.nombre.localeCompare(b.nombre, undefined, { numeric: true, sensitivity: 'base' }));
+
+            const totalEnTipo = canchasDelTipo.length;
+            const es11 = tipo.toLowerCase().includes('11');
+            const iconoTipo = es11 ? 'fa-futbol' : 'fa-bolt';
+            const badgeLabel = es11 ? 'Fútbol 11 (11 vs 11)' : 'Fútbol 7 (7 vs 7)';
+
+            const cardsHTML = canchasDelTipo.map(cancha => {
+                const reservasAgenda = state.reservasActivas.filter(r => r.cancha_id === cancha.id);
+                const estaOcupada = reservasAgenda.length > 0;
+                const precio = cancha.precio_hora || cancha.precio || (es11 ? 100000 : 60000);
+                
+                let agendaHTML = estaOcupada ? reservasAgenda.map(r => `
+                    <div style="background:var(--bg-app); padding:8px; border-radius:6px; margin-top:5px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-size:0.85em; font-weight:600;">👤 ${r.nombre_cliente}</span><br>
+                            <span style="font-size:0.75em; color:var(--text-muted);">⏰ ${r.hora_inicio} (${r.horas_alquiladas}h)</span>
+                        </div>
+                        <button class="btn-outline danger" style="padding:4px 8px; width:auto; font-size:0.75em;" onclick="pedirCancelacion(${r.id})" title="Cancelar reserva">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `).join('') : '<p style="font-size:0.8em; color:var(--text-muted); margin-top:6px;"><i class="fas fa-check-circle" style="color:var(--success); margin-right:4px;"></i>Libre actualmente</p>';
+
+                return `
+                    <div class="reserva-card cancha-card-admin" style="border-top: 3px solid ${estaOcupada ? 'var(--danger)' : 'var(--success)'};">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                                <h4 style="margin:0; font-size:1.05em; font-weight:700;">${cancha.nombre}</h4>
+                                <span class="badge ${estaOcupada ? 'cancelada' : 'activa'}" style="font-size:0.7em;">
+                                    ${estaOcupada ? 'Ocupada' : 'Disponible'}
+                                </span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <span class="cancha-precio-tag">${formatearDinero(precio)} / hora</span>
+                                <span style="font-size:0.75em; color:var(--text-muted); font-weight:600;">${cancha.tipo}</span>
+                            </div>
+                            <div>${agendaHTML}</div>
+                        </div>
+
+                        <div style="display:flex; gap:8px; margin-top:14px; padding-top:10px; border-top:1px solid var(--border);">
+                            <button class="btn-outline" style="padding:6px 10px; font-size:0.8em;" onclick='editarCancha(${JSON.stringify(cancha).replace(/'/g, "\\'")})'>
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button class="btn-outline danger" style="padding:6px 10px; font-size:0.8em;" onclick="eliminarCancha(${cancha.id}, '${cancha.nombre}')">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
 
             return `
-                <div class="reserva-card" style="border-top: 3px solid ${estaOcupada ? 'var(--danger)' : 'var(--success)'};">
-                    <h4 style="margin-bottom:2px;">${cancha.nombre}</h4>
-                    <span class="badge ${estaOcupada ? 'cancelada' : 'activa'}" style="margin-bottom:10px; display:inline-block;">${cancha.tipo}</span>
-                    <div>${agendaHTML}</div>
+                <div class="grupo-canchas-seccion">
+                    <div class="grupo-canchas-header">
+                        <div class="grupo-canchas-title">
+                            <i class="fas ${iconoTipo}" style="color:var(--accent);"></i>
+                            <span>Canchas ${badgeLabel}</span>
+                        </div>
+                        <span class="badge activa" style="font-size:0.8em;">${totalEnTipo} canchas disponibles</span>
+                    </div>
+                    <div class="reservas-grid">
+                        ${cardsHTML}
+                    </div>
                 </div>
             `;
         }).join('');
-    } catch(e) { console.error(e); }
+
+    } catch(e) { console.error("Error en renderInventario:", e); }
+}
+
+// ─── GESTIÓN DE CANCHAS (ADMIN) ───
+function abrirModalCancha() {
+    document.getElementById('form-cancha').reset();
+    document.getElementById('cancha-id').value = '';
+    document.getElementById('modal-cancha-title').innerText = 'Nueva Cancha';
+    document.getElementById('cancha-precio').value = '100000';
+    document.getElementById('modal-cancha').classList.add('visible');
+}
+
+function cerrarModalCancha() {
+    document.getElementById('modal-cancha').classList.remove('visible');
+}
+
+function actualizarPrecioSugeridoCancha() {
+    const id = document.getElementById('cancha-id').value;
+    if (!id) {
+        // Solo autollenar si es una cancha nueva
+        const tipo = document.getElementById('cancha-tipo').value;
+        document.getElementById('cancha-precio').value = tipo === '11v11' ? '100000' : '60000';
+    }
+}
+
+function editarCancha(cancha) {
+    document.getElementById('cancha-id').value = cancha.id;
+    document.getElementById('cancha-nombre').value = cancha.nombre;
+    document.getElementById('cancha-tipo').value = cancha.tipo;
+    document.getElementById('cancha-precio').value = cancha.precio_hora || cancha.precio || (cancha.tipo === '11v11' ? 100000 : 60000);
+    document.getElementById('modal-cancha-title').innerText = 'Editar Cancha';
+    document.getElementById('modal-cancha').classList.add('visible');
+}
+
+document.getElementById('form-cancha')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-guardar-cancha');
+    btn.disabled = true; btn.innerText = 'Guardando...';
+
+    const id = document.getElementById('cancha-id').value;
+    const isEdit = !!id;
+    const payload = {
+        nombre: document.getElementById('cancha-nombre').value.trim(),
+        tipo: document.getElementById('cancha-tipo').value,
+        precio_hora: parseFloat(document.getElementById('cancha-precio').value)
+    };
+
+    const url = isEdit ? `/api/canchas/${id}` : '/api/canchas';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'x-user-id': state.user.id,
+                'x-user-rol': state.user.rol
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.mensaje, 'success');
+            cerrarModalCancha();
+            await cargarDatosGlobales();
+            renderInventario();
+        } else {
+            showToast(data.mensaje || 'Error al guardar cancha', 'error');
+        }
+    } catch(err) {
+        showToast('Error de conexión', 'error');
+    }
+    btn.disabled = false; btn.innerText = 'Guardar Cancha';
+});
+
+async function eliminarCancha(id, nombre) {
+    if (!confirm(`¿Estás seguro de eliminar la "${nombre}"? Esta acción no se puede deshacer.`)) return;
+
+    try {
+        const res = await fetch(`/api/canchas/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'x-user-id': state.user.id,
+                'x-user-rol': state.user.rol
+            }
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.mensaje || 'Cancha eliminada', 'success');
+            await cargarDatosGlobales();
+            renderInventario();
+        } else {
+            showToast(data.mensaje || 'No se pudo eliminar la cancha', 'error');
+        }
+    } catch(e) {
+        showToast('Error al eliminar', 'error');
+    }
+}
+
+// ─── GESTIÓN DE IMPLEMENTOS DE INVENTARIO (ADMIN) ───
+function abrirModalImplemento() {
+    document.getElementById('form-implemento').reset();
+    document.getElementById('modal-implemento').classList.add('visible');
+}
+
+function cerrarModalImplemento() {
+    document.getElementById('modal-implemento').classList.remove('visible');
+}
+
+document.getElementById('form-implemento')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-guardar-implemento');
+    btn.disabled = true; btn.innerText = 'Guardando...';
+
+    const payload = {
+        articulo: document.getElementById('imp-articulo').value.trim(),
+        color: document.getElementById('imp-color').value.trim() || null,
+        cantidad_total: parseInt(document.getElementById('imp-cantidad').value) || 0
+    };
+
+    try {
+        const res = await fetch('/api/inventario', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-user-id': state.user.id,
+                'x-user-rol': state.user.rol
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.mensaje, 'success');
+            cerrarModalImplemento();
+            renderInventario();
+        } else {
+            showToast(data.mensaje || 'Error al guardar implemento', 'error');
+        }
+    } catch(err) {
+        showToast('Error de conexión', 'error');
+    }
+    btn.disabled = false; btn.innerText = 'Guardar Implemento';
+});
+
+function abrirModalStock(id, nombre, actual) {
+    document.getElementById('stock-inv-id').value = id;
+    document.getElementById('stock-inv-cantidad').value = actual;
+    document.getElementById('modal-stock-subtitle').innerText = `Modificar cantidad total de: ${nombre}`;
+    document.getElementById('modal-stock-inv').classList.add('visible');
+}
+
+function cerrarModalStock() {
+    document.getElementById('modal-stock-inv').classList.remove('visible');
+}
+
+document.getElementById('form-stock-inv')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('stock-inv-id').value;
+    const nuevaCant = parseInt(document.getElementById('stock-inv-cantidad').value);
+
+    try {
+        const res = await fetch(`/api/inventario/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-user-id': state.user.id,
+                'x-user-rol': state.user.rol
+            },
+            body: JSON.stringify({ cantidad_total: nuevaCant })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.mensaje, 'success');
+            cerrarModalStock();
+            renderInventario();
+        } else {
+            showToast(data.mensaje || 'Error al actualizar', 'error');
+        }
+    } catch(err) {
+        showToast('Error de conexión', 'error');
+    }
+});
+
+async function ajustarStockRapido(id, diff) {
+    const item = inventarioData.find(i => i.id === id);
+    if (!item) return;
+
+    const nuevaCant = Math.max(0, item.cantidad_total + diff);
+    try {
+        const res = await fetch(`/api/inventario/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-user-id': state.user.id,
+                'x-user-rol': state.user.rol
+            },
+            body: JSON.stringify({ cantidad_total: nuevaCant })
+        });
+        if (res.ok) {
+            renderInventario();
+        }
+    } catch(err) {
+        console.error(err);
+    }
+}
+
+async function eliminarImplemento(id, nombre) {
+    if (!confirm(`¿Deseas eliminar el implemento "${nombre}" de la bodega?`)) return;
+
+    try {
+        const res = await fetch(`/api/inventario/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'x-user-id': state.user.id,
+                'x-user-rol': state.user.rol
+            }
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.mensaje, 'success');
+            renderInventario();
+        } else {
+            showToast(data.mensaje || 'Error al eliminar', 'error');
+        }
+    } catch(e) {
+        showToast('Error al eliminar', 'error');
+    }
+}
+
+// ─── GESTIÓN DE USUARIOS (DASHBOARD SOLO ADMIN) ───
+let usuariosData = [];
+let filtroRolActual = 'todos';
+
+async function renderAdminUsuarios() {
+    if (state.user?.rol !== 'admin') return;
+    try {
+        const res = await fetch('/api/usuarios', {
+            headers: {
+                'x-user-id': state.user.id,
+                'x-user-rol': state.user.rol
+            }
+        });
+        usuariosData = await res.json();
+
+        // Calcular estadísticas
+        const total = usuariosData.length;
+        const clientes = usuariosData.filter(u => u.rol === 'cliente').length;
+        const admins = usuariosData.filter(u => u.rol === 'admin').length;
+
+        document.getElementById('stat-usuarios-total').innerText = total;
+        document.getElementById('stat-usuarios-clientes').innerText = clientes;
+        document.getElementById('stat-usuarios-admins').innerText = admins;
+
+        filtrarUsuariosAdmin();
+    } catch(e) {
+        console.error("Error al cargar usuarios:", e);
+    }
+}
+
+function cambiarFiltroRolUsuarios(rol, btn) {
+    filtroRolActual = rol;
+    document.querySelectorAll('#filtros-roles-usuarios .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtrarUsuariosAdmin();
+}
+
+function filtrarUsuariosAdmin() {
+    const term = document.getElementById('buscar-usuario')?.value.toLowerCase().trim() || '';
+    const tbody = document.getElementById('tabla-usuarios-admin');
+    if (!tbody) return;
+
+    let filtrados = usuariosData;
+
+    if (filtroRolActual !== 'todos') {
+        filtrados = filtrados.filter(u => u.rol === filtroRolActual);
+    }
+
+    if (term) {
+        filtrados = filtrados.filter(u => 
+            (u.username && u.username.toLowerCase().includes(term)) ||
+            (u.email && u.email.toLowerCase().includes(term)) ||
+            (u.telefono && u.telefono.toLowerCase().includes(term))
+        );
+    }
+
+    if (filtrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">No se encontraron usuarios que coincidan con la búsqueda.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = filtrados.map(u => {
+        const esMismoAdmin = u.id === state.user.id;
+        const inicial = u.username ? u.username.charAt(0).toUpperCase() : 'U';
+        const badgeRolClass = u.rol === 'admin' ? 'badge-role-admin' : 'badge-role-client';
+        const nuevoRol = u.rol === 'admin' ? 'cliente' : 'admin';
+        const textoBotonRol = u.rol === 'admin' ? '<i class="fas fa-user"></i> Hacer Cliente' : '<i class="fas fa-shield-alt"></i> Hacer Admin';
+
+        return `
+        <tr>
+            <td style="font-weight:700; color:var(--text-muted);">#${u.id}</td>
+            <td>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="avatar-sm" style="width:34px; height:34px; font-size:0.9em;">${inicial}</div>
+                    <div>
+                        <strong style="color:var(--text-main); font-size:0.95em;">${u.username}</strong>
+                        ${esMismoAdmin ? '<span style="font-size:0.7em; margin-left:6px; color:var(--accent); font-weight:700;">(Tú)</span>' : ''}
+                    </div>
+                </div>
+            </td>
+            <td>${u.email || '<span style="color:var(--text-muted);">Sin correo</span>'}</td>
+            <td>${u.telefono || '<span style="color:var(--text-muted);">Sin teléfono</span>'}</td>
+            <td>
+                <span class="badge ${badgeRolClass}" style="text-transform:uppercase; font-size:0.75em; padding:4px 10px; border-radius:12px;">
+                    ${u.rol}
+                </span>
+            </td>
+            <td>
+                ${esMismoAdmin ? '<span style="font-size:0.8em; color:var(--text-muted); font-style:italic;">Sesión activa</span>' : `
+                <div style="display:flex; gap:6px;">
+                    <button class="btn-outline" style="padding:5px 10px; font-size:0.75em; width:auto;" onclick="cambiarRolUsuario(${u.id}, '${nuevoRol}', '${u.username}')">
+                        ${textoBotonRol}
+                    </button>
+                    <button class="btn-outline danger" style="padding:5px 10px; font-size:0.75em; width:auto;" onclick="eliminarUsuario(${u.id}, '${u.username}')" title="Eliminar usuario">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+                `}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+async function cambiarRolUsuario(id, nuevoRol, username) {
+    if (!confirm(`¿Deseas cambiar el rol de "${username}" a ${nuevoRol.toUpperCase()}?`)) return;
+
+    try {
+        const res = await fetch(`/api/usuarios/${id}/rol`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-user-id': state.user.id,
+                'x-user-rol': state.user.rol
+            },
+            body: JSON.stringify({ rol: nuevoRol })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.mensaje, 'success');
+            renderAdminUsuarios();
+        } else {
+            showToast(data.mensaje || 'Error al actualizar rol', 'error');
+        }
+    } catch(e) {
+        showToast('Error de conexión', 'error');
+    }
+}
+
+async function eliminarUsuario(id, username) {
+    if (!confirm(`¿Estás seguro de eliminar permanentemente al usuario "${username}"?`)) return;
+
+    try {
+        const res = await fetch(`/api/usuarios/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'x-user-id': state.user.id,
+                'x-user-rol': state.user.rol
+            }
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.mensaje, 'success');
+            renderAdminUsuarios();
+        } else {
+            showToast(data.mensaje || 'Error al eliminar usuario', 'error');
+        }
+    } catch(e) {
+        showToast('Error de conexión', 'error');
+    }
 }
 
 // === 8. LÓGICA DE TIENDA Y CARRITO (CLIENTE) ===

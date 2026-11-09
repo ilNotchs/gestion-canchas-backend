@@ -22,6 +22,7 @@ const reservasRoutes = require('./routes/reservasRoutes');
 const productosRoutes = require('./routes/productosRoutes');
 const ventasRoutes = require('./routes/ventasRoutes');
 const authController = require('./controllers/authController'); // <-- Importamos el controlador de Login
+const { verificarSesion, soloAdmin } = require('./middleware/authMiddleware');
 
 // === 3. DEFINIR PUNTOS DE ACCESO (APIs) ===
 app.use('/api/inventario', inventarioRoutes);
@@ -35,6 +36,11 @@ app.post('/api/login', authController.login);
 
 // RUTA DE REGISTRO: Permite que nuevos usuarios se registren como clientes
 app.post('/api/register', authController.register);
+
+// RUTAS DE ADMINISTRACIÓN DE USUARIOS (Solo Admin)
+app.get('/api/usuarios', verificarSesion, soloAdmin, authController.obtenerUsuarios);
+app.put('/api/usuarios/:id/rol', verificarSesion, soloAdmin, authController.cambiarRolUsuario);
+app.delete('/api/usuarios/:id', verificarSesion, soloAdmin, authController.eliminarUsuario);
 
 // === 4. VERIFICACIÓN DE CONEXIÓN A LA BASE DE DATOS ===
 const checkConnection = async () => {

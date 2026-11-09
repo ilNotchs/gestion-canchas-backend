@@ -103,6 +103,9 @@
             <button class="nav-item admin-only" onclick="mostrarModulo('admin-caja')" style="display:none;">
                 <i class="fas fa-cash-register"></i> Caja y Ventas
             </button>
+            <button class="nav-item admin-only" onclick="mostrarModulo('admin-usuarios')" style="display:none;">
+                <i class="fas fa-users-cog"></i> Gestión Usuarios
+            </button>
             
             <div class="nav-divider cliente-only"></div>
             
@@ -536,22 +539,37 @@
 
             <!-- ================= MÓDULO: INVENTARIO (ADMIN) ================= -->
             <section id="modulo-inventario" class="modulo">
-                <div class="form-header" style="margin-bottom:20px;">
-                    <div class="icon-box" style="background:var(--success-light); color:var(--success);"><i class="fas fa-boxes"></i></div>
-                    <div>
-                        <h3>Inventario y Canchas</h3>
-                        <p>Control de disponibilidad e implementos</p>
+                <div class="form-header" style="margin-bottom:20px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div class="icon-box" style="background:var(--success-light); color:var(--success);"><i class="fas fa-boxes"></i></div>
+                        <div>
+                            <h3>Inventario y Gestión de Canchas</h3>
+                            <p>Control de disponibilidad, precios de canchas e implementos</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn-confirmar" style="width: auto; padding: 10px 18px; font-size: 0.9em;" onclick="abrirModalCancha()">
+                            <i class="fas fa-plus"></i> Nueva Cancha
+                        </button>
+                        <button class="btn-confirmar" style="width: auto; padding: 10px 18px; font-size: 0.9em; background: #059669;" onclick="abrirModalImplemento()">
+                            <i class="fas fa-plus-circle"></i> Nuevo Implemento
+                        </button>
                     </div>
                 </div>
                 
-                <h4 style="margin-bottom:15px;">Estado de las Canchas</h4>
-                <div id="lista-canchas" class="reservas-grid" style="margin-bottom:30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="margin: 0;"><i class="fas fa-cubes" style="color: var(--accent); margin-right: 8px;"></i>Implementos en Bodega (Balones, Petos, Infladores)</h4>
+                </div>
+                <div id="lista-inventario" class="stats-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); margin-bottom: 35px;">
                     <!-- JS rellena -->
                 </div>
 
-                <h4 style="margin-bottom:15px;">Implementos en Bodega</h4>
-                <div id="lista-inventario" class="stats-grid">
-                    <!-- JS rellena -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="margin: 0;"><i class="fas fa-futbol" style="color: var(--accent); margin-right: 8px;"></i>Distribución y Estado de Canchas</h4>
+                </div>
+                <!-- Contenedor agrupado por categorías de canchas -->
+                <div id="lista-canchas-agrupadas" style="display: flex; flex-direction: column; gap: 25px; margin-bottom: 30px;">
+                    <!-- JS rellena por grupos: Canchas 11v11, Canchas 7v7, etc. -->
                 </div>
             </section>
 
@@ -636,6 +654,63 @@
                                 <tr><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th></tr>
                             </thead>
                             <tbody id="tabla-ventas-admin">
+                                <!-- JS rellena -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= MÓDULO: GESTIÓN DE USUARIOS (ADMIN) ================= -->
+            <section id="modulo-admin-usuarios" class="modulo">
+                <div class="form-header" style="margin-bottom:20px;">
+                    <div class="icon-box" style="background:var(--primary-light); color:var(--primary);"><i class="fas fa-users-cog"></i></div>
+                    <div>
+                        <h3>Gestión de Usuarios</h3>
+                        <p>Visualización y administración de cuentas de usuario de la plataforma</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:var(--primary-light); color:var(--primary);"><i class="fas fa-users"></i></div>
+                        <div class="stat-info"><h5>Total Usuarios</h5><h3 id="stat-usuarios-total">0</h3></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:var(--success-light); color:var(--success);"><i class="fas fa-user-check"></i></div>
+                        <div class="stat-info"><h5>Clientes</h5><h3 id="stat-usuarios-clientes">0</h3></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:var(--warning-light); color:var(--warning);"><i class="fas fa-user-shield"></i></div>
+                        <div class="stat-info"><h5>Administradores</h5><h3 id="stat-usuarios-admins">0</h3></div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header" style="flex-wrap: wrap; gap: 15px;">
+                        <div class="custom-input" style="width: 320px; max-width: 100%;">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="buscar-usuario" placeholder="Buscar por nombre, correo o teléfono..." onkeyup="filtrarUsuariosAdmin()">
+                        </div>
+                        <div class="table-filters" id="filtros-roles-usuarios">
+                            <button class="filter-btn active" onclick="cambiarFiltroRolUsuarios('todos', this)">Todos</button>
+                            <button class="filter-btn" onclick="cambiarFiltroRolUsuarios('cliente', this)">Clientes</button>
+                            <button class="filter-btn" onclick="cambiarFiltroRolUsuarios('admin', this)">Admins</button>
+                        </div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuario</th>
+                                    <th>Correo Electrónico</th>
+                                    <th>Teléfono</th>
+                                    <th>Rol</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-usuarios-admin">
                                 <!-- JS rellena -->
                             </tbody>
                         </table>
@@ -740,6 +815,104 @@
 
         </div>
     </main>
+
+    <!-- Modal de Cancha (Admin) -->
+    <div id="modal-cancha" class="modal-overlay">
+        <div class="modal-box" style="max-width: 480px; text-align: left;">
+            <div class="form-header" style="margin-bottom: 20px;">
+                <h3 id="modal-cancha-title">Nueva Cancha</h3>
+                <button class="btn-outline" style="border: none; padding: 5px; width: auto;" onclick="cerrarModalCancha()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="form-cancha">
+                <input type="hidden" id="cancha-id">
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label>Nombre de la Cancha</label>
+                    <div class="custom-input">
+                        <i class="fas fa-futbol"></i>
+                        <input type="text" id="cancha-nombre" placeholder="Ej: Cancha Camp Nou" required>
+                    </div>
+                </div>
+                <div class="form-row" style="margin-bottom: 15px;">
+                    <div class="input-group">
+                        <label>Tipo de Cancha</label>
+                        <div class="custom-select">
+                            <i class="fas fa-layer-group"></i>
+                            <select id="cancha-tipo" required onchange="actualizarPrecioSugeridoCancha()">
+                                <option value="11v11">11v11 (Fútbol 11)</option>
+                                <option value="7v7">7v7 (Fútbol 7)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Precio por Hora ($)</label>
+                        <div class="custom-input">
+                            <i class="fas fa-dollar-sign"></i>
+                            <input type="number" id="cancha-precio" min="0" step="1000" placeholder="60000" required>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-confirmar" id="btn-guardar-cancha" style="margin-top: 10px;">Guardar Cancha</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Implemento (Admin) -->
+    <div id="modal-implemento" class="modal-overlay">
+        <div class="modal-box" style="max-width: 460px; text-align: left;">
+            <div class="form-header" style="margin-bottom: 20px;">
+                <h3 id="modal-implemento-title">Nuevo Implemento</h3>
+                <button class="btn-outline" style="border: none; padding: 5px; width: auto;" onclick="cerrarModalImplemento()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="form-implemento">
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label>Artículo</label>
+                    <div class="custom-input">
+                        <i class="fas fa-box"></i>
+                        <input type="text" id="imp-articulo" placeholder="Ej: Inflador, Conos, Balón..." required>
+                    </div>
+                </div>
+                <div class="form-row" style="margin-bottom: 15px;">
+                    <div class="input-group">
+                        <label>Color (Opcional)</label>
+                        <div class="custom-input">
+                            <i class="fas fa-palette"></i>
+                            <input type="text" id="imp-color" placeholder="Ej: Rojo, Azul, Negro">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Cantidad Inicial</label>
+                        <div class="custom-input">
+                            <i class="fas fa-cubes"></i>
+                            <input type="number" id="imp-cantidad" min="0" placeholder="10" required>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-confirmar" id="btn-guardar-implemento" style="margin-top: 10px;">Guardar Implemento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Stock de Implemento (Admin) -->
+    <div id="modal-stock-inv" class="modal-overlay">
+        <div class="modal-box" style="max-width: 400px; text-align: left;">
+            <div class="form-header" style="margin-bottom: 15px;">
+                <h3 id="modal-stock-title">Editar Cantidad</h3>
+                <button class="btn-outline" style="border: none; padding: 5px; width: auto;" onclick="cerrarModalStock()"><i class="fas fa-times"></i></button>
+            </div>
+            <p id="modal-stock-subtitle" style="font-size:0.9em; color:var(--text-muted); margin-bottom:15px;"></p>
+            <form id="form-stock-inv">
+                <input type="hidden" id="stock-inv-id">
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label>Cantidad Total en Bodega</label>
+                    <div class="custom-input">
+                        <i class="fas fa-cubes"></i>
+                        <input type="number" id="stock-inv-cantidad" min="0" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-confirmar" id="btn-guardar-stock">Actualizar Stock</button>
+            </form>
+        </div>
+    </div>
 
     <!-- Modal de Producto (Admin) -->
     <div id="modal-producto" class="modal-overlay">

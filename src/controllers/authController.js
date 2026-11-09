@@ -156,4 +156,78 @@ const register = async (req, res) => {
     }
 };
 
-module.exports = { login, register };
+/**
+ * Obtener todos los usuarios (Admin).
+ */
+const obtenerUsuarios = async (req, res) => {
+    try {
+        const { buscar, rol } = req.query;
+        let query = 'SELECT id, username, email, telefono, rol FROM usuarios WHERE 1=1';
+        const params = [];
+
+        if (buscar) {
+            query += ' AND (username LIKE ? OR email LIKE ? OR telefono LIKE ?)';
+            const term = `%${buscar}%`;
+            params.push(term, term, term);
+        }
+
+        if (rol && rol !== 'todos') {
+            query += ' AND rol = ?';
+            params.push(rol);
+        }
+
+        query += ' ORDER BY id ASC';
+
+        const [usuarios] = await db.query(query, params);
+        res.json(usuarios);
+    } catch (error) {
+        console.error("❌ Error en obtenerUsuarios:", error);
+        res.status(500).json({ mensaje: 'Error al obtener los usuarios.' });
+    }
+};
+
+/**
+ * Cambiar rol de usuario (Admin).
+ */
+const cambiarRolUsuario = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { rol } = req.body;
+
+        if (!['admin', 'cliente'].includes(rol)) {
+            return res.status(400).json({ mensaje: 'Rol no válido.' });
+        }
+
+        // Evitar que el admin se quite permisos a sí mismo
+        if (parseInt(id) === req.usuario.id && rol !== 'admin') {
+            return res.status(400).json({ mensaje: 'No puedes revocar tu propio rol de administrador.' });
+        }
+
+        await db.query('UPDATE usuarios SET rol = ? WHERE id = ?', [rol, id]);
+        res.json({ success: true, mensaje: `Rol actualizado a ${rol}.` });
+    } catch (error) {
+        console.error("❌ Error en cambiarRolUsuario:", error);
+        res.status(500).json({ mensaje: 'Error al cambiar rol del usuario.' });
+    }
+};
+
+/**
+ * Eliminar usuario (Admin).
+ */
+const eliminarUsuario = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (parseInt(id) === req.usuario.id) {
+            return res.status(400).json({ mensaje: 'No puedes eliminar tu propia cuenta.' });
+        }
+
+        await db.query('DELETE FROM usuarios WHERE id = ?', [id]);
+        res.json({ success: true, mensaje: 'Usuario eliminado exitosamente.' });
+    } catch (error) {
+        console.error("❌ Error en eliminarUsuario:", error);
+        res.status(500).json({ mensaje: 'Error al eliminar usuario.' });
+    }
+};
+
+module.exports = { login, register, obtenerUsuarios, cambiarRolUsuario, eliminarUsuario };

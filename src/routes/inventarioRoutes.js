@@ -1,8 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { obtenerInventario } = require('../controllers/inventarioController');
+const { verificarSesion, soloAdmin } = require('../middleware/authMiddleware');
+const {
+    obtenerInventario,
+    actualizarInventario,
+    crearArticuloInventario,
+    eliminarArticuloInventario
+} = require('../controllers/inventarioController');
 
-// Cuando alguien haga una petición GET a la raíz de esta ruta, ejecuta obtenerInventario
 router.get('/', obtenerInventario);
+router.post('/', verificarSesion, soloAdmin, crearArticuloInventario);
+router.put('/:id', verificarSesion, soloAdmin, actualizarInventario);
+router.delete('/:id', verificarSesion, soloAdmin, eliminarArticuloInventario);
 
 module.exports = router;
