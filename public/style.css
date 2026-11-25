@@ -606,3 +606,49 @@ canvas#confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 
     color: white;
     border-color: var(--primary);
 }
+
+/* =========================================================
+   ESTILOS PARA MÓDULO DE REPORTES Y EXPORTACIÓN A PDF
+========================================================= */
+#modulo-admin-reportes .card-form {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+}
+
+#tabla-reporte-alquileres th {
+    white-space: nowrap;
+    font-size: 0.78em;
+    padding: 12px 14px;
+}
+
+#tabla-reporte-alquileres td {
+    padding: 12px 14px;
+    vertical-align: middle;
+}
+
+/* Optimización para que el PDF renderice con nitidez y fondo claro */
+#area-imprimible-reporte {
+    background: var(--surface);
+    transition: background-color 0.2s;
+}
+
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .sidebar, .topbar, .btn-confirmar, .btn-outline, .card-form {
+        display: none !important;
+    }
+    .main-wrapper {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    #modulo-admin-reportes {
+        display: block !important;
+    }
+    #encabezado-pdf-oficial {
+        display: block !important;
+    }
+}

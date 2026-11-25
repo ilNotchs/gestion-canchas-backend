@@ -60,6 +60,7 @@ function mostrarModulo(id) {
     if(id === 'admin-productos') renderAdminProductos();
     if(id === 'admin-caja') renderAdminCaja();
     if(id === 'admin-usuarios') renderAdminUsuarios();
+    if(id === 'admin-reportes') cargarReportesAdmin();
     if(id === 'tienda') renderTienda();
     if(id === 'carrito') renderCarrito();
     if(id === 'mis-compras') renderMisCompras();
@@ -1408,6 +1409,189 @@ async function renderAdminCaja() {
         }).join('');
         
     } catch(e) { console.error(e); }
+}
+
+// ─── GESTIÓN DE REPORTES Y PDF (ADMIN) ───
+let reportesDataActual = [];
+let reporteResumenActual = null;
+
+async function cargarReportesAdmin() {
+    if (state.user?.rol !== 'admin') return;
+
+    // Poblar selector de canchas si aún no se ha hecho
+    const selectCanchas = document.getElementById('rep-filtro-cancha');
+    if (selectCanchas && selectCanchas.options.length <= 1 && state.canchas && state.canchas.length > 0) {
+        selectCanchas.innerHTML = '<option value="todas">Todas las canchas</option>' + 
+            state.canchas.map(c => `<option value="${c.id}">${c.nombre} (${c.tipo})</option>`).join('');
+    }
+
+    const fechaInicio = document.getElementById('rep-fecha-inicio')?.value || '';
+    const fechaFin = document.getElementById('rep-fecha-fin')?.value || '';
+    const canchaId = document.getElementById('rep-filtro-cancha')?.value || 'todas';
+    const estado = document.getElementById('rep-filtro-estado')?.value || 'todos';
+    const buscar = document.getElementById('rep-filtro-buscar')?.value || '';
+
+    const queryParams = new URLSearchParams();
+    if (fechaInicio) queryParams.append('fecha_inicio', fechaInicio);
+    if (fechaFin) queryParams.append('fecha_fin', fechaFin);
+    if (canchaId && canchaId !== 'todas') queryParams.append('cancha_id', canchaId);
+    if (estado && estado !== 'todos') queryParams.append('estado', estado);
+    if (buscar) queryParams.append('buscar', buscar);
+
+    try {
+        const res = await fetch(`/api/reservas/reportes?${queryParams.toString()}`, {
+            headers: {
+                'x-user-id': state.user.id,
+                'x-user-rol': state.user.rol
+            }
+        });
+        const data = await res.json();
+        
+        reportesDataActual = data.alquileres || [];
+        reporteResumenActual = data.resumen || {};
+
+        // Actualizar tarjetas de métricas en UI
+        document.getElementById('rep-total-reservas').innerText = reporteResumenActual.total_alquileres || 0;
+        document.getElementById('rep-total-horas').innerText = `${reporteResumenActual.total_horas || 0}h`;
+        document.getElementById('rep-total-ingresos').innerText = formatearDinero(reporteResumenActual.total_ingresos || 0);
+        document.getElementById('rep-total-clientes').innerText = reporteResumenActual.clientes_unicos || 0;
+
+        renderTablaReportes(reportesDataActual);
+    } catch (e) {
+        console.error("Error al cargar reportes:", e);
+        showToast("Error al cargar los reportes", "error");
+    }
+}
+
+function renderTablaReportes(alquileres) {
+    const tbody = document.getElementById('tabla-reportes-body');
+    const contador = document.getElementById('rep-contador-registros');
+    if (!tbody) return;
+
+    if (contador) {
+        contador.innerText = `Mostrando ${alquileres.length} alquiler(es) encontrado(s)`;
+    }
+
+    if (alquileres.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:35px; color:var(--text-muted);">No se encontraron alquileres con los filtros seleccionados.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = alquileres.map(r => {
+        const fechaLimpia = r.fecha_reserva ? r.fecha_reserva.substring(0, 10) : '';
+        const implementos = [];
+        if (r.balones_prestados > 0) implementos.push(`${r.balones_prestados} balón(es)`);
+        if (r.petos_rojos_prestados > 0) implementos.push(`${r.petos_rojos_prestados} peto(s) rojo(s)`);
+        if (r.petos_azules_prestados > 0) implementos.push(`${r.petos_azules_prestados} peto(s) azul(es)`);
+        const strImplementos = implementos.length > 0 ? implementos.join(', ') : 'Ninguno';
+
+        const badgeClass = r.estado === 'activa' ? 'activa' : (r.estado === 'cancelada' ? 'cancelada' : 'completada');
+
+        return `
+            <tr>
+                <td style="font-weight:700; color:var(--text-muted);">#${r.id}</td>
+                <td>
+                    <div style="font-weight:600; color:var(--text-main);">${r.nombre_cliente}</div>
+                </td>
+                <td>
+                    <span style="font-weight:600;">${r.nombre_cancha}</span><br>
+                    <span style="font-size:0.75em; color:var(--text-muted);">${r.tipo_cancha}</span>
+                </td>
+                <td>
+                    <span><i class="far fa-calendar" style="margin-right:4px; color:var(--accent);"></i>${fechaLimpia}</span><br>
+                    <span style="font-size:0.8em; color:var(--text-muted);"><i class="far fa-clock" style="margin-right:4px;"></i>${r.hora_inicio}</span>
+                </td>
+                <td style="font-weight:700; text-align:center;">
+                    ${r.horas_alquiladas} hr${r.horas_alquiladas > 1 ? 's' : ''}
+                </td>
+                <td style="font-size:0.8em; color:var(--text-muted); max-width:180px;">
+                    ${strImplementos}
+                </td>
+                <td class="monto-cell" style="color:var(--primary); font-weight:700;">
+                    ${formatearDinero(r.total)}
+                </td>
+                <td>
+                    <span style="text-transform:capitalize; font-size:0.85em;"><i class="fas fa-wallet" style="margin-right:4px; color:var(--text-muted);"></i>${r.metodo_pago || 'efectivo'}</span>
+                </td>
+                <td>
+                    <span class="badge ${badgeClass}" style="font-size:0.75em; padding:3px 8px;">${r.estado}</span>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function filtrarReportesEnVivo() {
+    const term = document.getElementById('rep-filtro-buscar')?.value.toLowerCase().trim() || '';
+    if (!term) {
+        renderTablaReportes(reportesDataActual);
+        return;
+    }
+    const filtrados = reportesDataActual.filter(r => 
+        (r.nombre_cliente && r.nombre_cliente.toLowerCase().includes(term)) ||
+        (r.nombre_cancha && r.nombre_cancha.toLowerCase().includes(term)) ||
+        (r.metodo_pago && r.metodo_pago.toLowerCase().includes(term))
+    );
+    renderTablaReportes(filtrados);
+}
+
+function limpiarFiltrosReporte() {
+    if (document.getElementById('rep-fecha-inicio')) document.getElementById('rep-fecha-inicio').value = '';
+    if (document.getElementById('rep-fecha-fin')) document.getElementById('rep-fecha-fin').value = '';
+    if (document.getElementById('rep-filtro-cancha')) document.getElementById('rep-filtro-cancha').value = 'todas';
+    if (document.getElementById('rep-filtro-estado')) document.getElementById('rep-filtro-estado').value = 'todos';
+    if (document.getElementById('rep-filtro-buscar')) document.getElementById('rep-filtro-buscar').value = '';
+    cargarReportesAdmin();
+}
+
+/**
+ * Genera y descarga el reporte en formato PDF usando html2pdf.js
+ */
+async function generarReportePDF() {
+    if (!reportesDataActual || reportesDataActual.length === 0) {
+        showToast("No hay datos para exportar en este reporte.", "error");
+        return;
+    }
+
+    const areaImprimible = document.getElementById('area-imprimible-reporte');
+    const encabezadoOficial = document.getElementById('encabezado-pdf-oficial');
+    if (!areaImprimible) return;
+
+    showToast("Generando PDF profesional...", "success");
+
+    // Llenar datos del encabezado oficial del PDF
+    const hoy = new Date();
+    const strFecha = hoy.toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }) + ' ' + hoy.toLocaleTimeString('es-CO');
+    if (document.getElementById('pdf-fecha-generacion')) document.getElementById('pdf-fecha-generacion').innerText = `Generado el: ${strFecha}`;
+    if (document.getElementById('pdf-generado-por')) document.getElementById('pdf-generado-por').innerText = `Generado por: ${state.user?.username || 'Administrador'}`;
+    if (document.getElementById('pdf-stat-reservas')) document.getElementById('pdf-stat-reservas').innerText = reporteResumenActual?.total_alquileres || reportesDataActual.length;
+    if (document.getElementById('pdf-stat-horas')) document.getElementById('pdf-stat-horas').innerText = `${reporteResumenActual?.total_horas || 0} hrs`;
+    if (document.getElementById('pdf-stat-ingresos')) document.getElementById('pdf-stat-ingresos').innerText = formatearDinero(reporteResumenActual?.total_ingresos || 0);
+    if (document.getElementById('pdf-stat-clientes')) document.getElementById('pdf-stat-clientes').innerText = reporteResumenActual?.clientes_unicos || 0;
+
+    // Mostrar temporalmente el encabezado para html2pdf
+    if (encabezadoOficial) encabezadoOficial.style.display = 'block';
+
+    const opt = {
+        margin: [10, 10, 12, 10],
+        filename: `Reporte_Alquiler_FitCanchas_${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    try {
+        await html2pdf().set(opt).from(areaImprimible).save();
+        showToast("¡Reporte PDF descargado con éxito!", "success");
+        lanzarConfetti();
+    } catch (error) {
+        console.error("Error al exportar PDF:", error);
+        showToast("Error al generar el archivo PDF.", "error");
+    } finally {
+        // Ocultar encabezado nuevamente de la vista normal
+        if (encabezadoOficial) encabezadoOficial.style.display = 'none';
+    }
 }
 
 // === BOOTSTRAP ===

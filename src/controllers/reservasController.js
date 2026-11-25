@@ -285,4 +285,114 @@ const finalizarReserva = async (req, res) => {
     }
 };
 
-module.exports = { crearReserva, obtenerReservasActivas, obtenerTodasReservas, cancelarReserva, finalizarReserva };
+/**
+ * Obtener reporte detallado de alquileres para administradores.
+ * Filtros opcionales: fecha_inicio, fecha_fin, estado, cancha_id, cliente
+ */
+const obtenerReporteAlquileres = async (req, res) => {
+    try {
+        const { fecha_inicio, fecha_fin, estado, cancha_id, buscar } = req.query;
+
+        let query = `
+            SELECT 
+                r.id,
+                r.nombre_cliente,
+                r.fecha_reserva,
+                r.hora_inicio,
+                r.horas_alquiladas,
+                r.balones_prestados,
+                r.petos_rojos_prestados,
+                r.petos_azules_prestados,
+                r.estado,
+                r.metodo_pago,
+                COALESCE(r.total, 0) as total,
+                c.id as cancha_id,
+                c.nombre as nombre_cancha,
+                c.tipo as tipo_cancha,
+                COALESCE(c.precio_hora, CASE WHEN c.tipo = '11v11' THEN 100000 ELSE 60000 END) as precio_hora_cancha
+            FROM reservas r
+            JOIN canchas c ON r.cancha_id = c.id
+            WHERE 1=1
+        `;
+        const params = [];
+
+        if (fecha_inicio) {
+            query += ' AND r.fecha_reserva >= ?';
+            params.push(fecha_inicio);
+        }
+        if (fecha_fin) {
+            query += ' AND r.fecha_reserva <= ?';
+            params.push(fecha_fin);
+        }
+        if (estado && estado !== 'todos') {
+            query += ' AND r.estado = ?';
+            params.push(estado);
+        }
+        if (cancha_id && cancha_id !== 'todas') {
+            query += ' AND r.cancha_id = ?';
+            params.push(cancha_id);
+        }
+        if (buscar) {
+            query += ' AND (r.nombre_cliente LIKE ? OR c.nombre LIKE ?)';
+            const term = `%${buscar}%`;
+            params.push(term, term);
+        }
+
+        query += ' ORDER BY r.fecha_reserva DESC, r.hora_inicio DESC';
+
+        const [reservas] = await db.query(query, params);
+
+        // Calcular estadísticas acumuladas del reporte
+        let totalHoras = 0;
+        let totalIngresos = 0;
+        let totalBalones = 0;
+        let totalPetos = 0;
+        const clientesSet = new Set();
+        const canchasUso = {};
+
+        const registros = reservas.map(r => {
+            const horas = parseInt(r.horas_alquiladas) || 1;
+            const precioHora = parseFloat(r.precio_hora_cancha) || (r.tipo_cancha === '11v11' ? 100000 : 60000);
+            const totalCalculado = (r.total && parseFloat(r.total) > 0) ? parseFloat(r.total) : (precioHora * horas);
+            
+            totalHoras += horas;
+            totalIngresos += totalCalculado;
+            totalBalones += (parseInt(r.balones_prestados) || 0);
+            totalPetos += (parseInt(r.petos_rojos_prestados) || 0) + (parseInt(r.petos_azules_prestados) || 0);
+            clientesSet.add(r.nombre_cliente);
+
+            canchasUso[r.nombre_cancha] = (canchasUso[r.nombre_cancha] || 0) + horas;
+
+            return {
+                ...r,
+                horas_alquiladas: horas,
+                total: totalCalculado
+            };
+        });
+
+        res.json({
+            resumen: {
+                total_alquileres: registros.length,
+                total_horas: totalHoras,
+                total_ingresos: totalIngresos,
+                clientes_unicos: clientesSet.size,
+                total_balones: totalBalones,
+                total_petos: totalPetos,
+                canchas_uso: canchasUso
+            },
+            alquileres: registros
+        });
+    } catch (error) {
+        console.error("❌ Error en obtenerReporteAlquileres:", error);
+        res.status(500).json({ mensaje: 'Error al generar el reporte de alquileres.' });
+    }
+};
+
+module.exports = { 
+    crearReserva, 
+    obtenerReservasActivas, 
+    obtenerTodasReservas, 
+    cancelarReserva, 
+    finalizarReserva,
+    obtenerReporteAlquileres
+};

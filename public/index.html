@@ -106,6 +106,9 @@
             <button class="nav-item admin-only" onclick="mostrarModulo('admin-usuarios')" style="display:none;">
                 <i class="fas fa-users-cog"></i> Gestión Usuarios
             </button>
+            <button class="nav-item admin-only" onclick="mostrarModulo('admin-reportes')" style="display:none;">
+                <i class="fas fa-file-invoice"></i> Reportes y PDF
+            </button>
             
             <div class="nav-divider cliente-only"></div>
             
@@ -711,6 +714,148 @@
                                 </tr>
                             </thead>
                             <tbody id="tabla-usuarios-admin">
+                                <!-- JS rellena -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= MÓDULO: REPORTES Y PDF (ADMIN) ================= -->
+            <section id="modulo-admin-reportes" class="modulo">
+                <div class="form-header" style="margin-bottom:20px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div class="icon-box" style="background:var(--primary-light); color:var(--primary);"><i class="fas fa-file-invoice"></i></div>
+                        <div>
+                            <h3>Centro de Reportes y Estadísticas</h3>
+                            <p>Historial consolidado de alquileres, horas jugadas, clientes e ingresos</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn-confirmar" style="width: auto; padding: 10px 18px; font-size: 0.9em; background: #2563eb;" onclick="generarReportePDF()">
+                            <i class="fas fa-file-pdf"></i> Exportar a PDF
+                        </button>
+                        <button class="btn-outline" style="width: auto; padding: 10px 16px; font-size: 0.9em;" onclick="cargarReportesAdmin()">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjetas de métricas del reporte -->
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 25px;">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:var(--primary-light); color:var(--primary);"><i class="fas fa-calendar-check"></i></div>
+                        <div class="stat-info"><h5>Alquileres</h5><h3 id="rep-total-reservas">0</h3></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:var(--warning-light); color:var(--warning);"><i class="fas fa-clock"></i></div>
+                        <div class="stat-info"><h5>Horas Jugadas</h5><h3 id="rep-total-horas">0h</h3></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:var(--success-light); color:var(--success);"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="stat-info"><h5>Total Ingresos</h5><h3 id="rep-total-ingresos">$0</h3></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(59, 130, 246, 0.15); color:#3b82f6;"><i class="fas fa-user-friends"></i></div>
+                        <div class="stat-info"><h5>Clientes Únicos</h5><h3 id="rep-total-clientes">0</h3></div>
+                    </div>
+                </div>
+
+                <!-- Barra de filtros -->
+                <div class="card-form" style="padding: 20px; margin-bottom: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h4 style="margin: 0; font-size: 1em;"><i class="fas fa-filter" style="color:var(--accent); margin-right: 8px;"></i>Filtrar Alquileres</h4>
+                        <button class="btn-outline" style="padding: 4px 10px; font-size: 0.8em; width: auto;" onclick="limpiarFiltrosReporte()">Limpiar Filtros</button>
+                    </div>
+                    <div class="form-row" style="margin-bottom: 0; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                        <div class="input-group">
+                            <label>Desde</label>
+                            <div class="custom-input">
+                                <i class="far fa-calendar"></i>
+                                <input type="date" id="rep-fecha-inicio" onchange="cargarReportesAdmin()">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Hasta</label>
+                            <div class="custom-input">
+                                <i class="far fa-calendar"></i>
+                                <input type="date" id="rep-fecha-fin" onchange="cargarReportesAdmin()">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Cancha</label>
+                            <div class="custom-select">
+                                <i class="fas fa-futbol"></i>
+                                <select id="rep-filtro-cancha" onchange="cargarReportesAdmin()">
+                                    <option value="todas">Todas las canchas</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Estado</label>
+                            <div class="custom-select">
+                                <i class="fas fa-toggle-on"></i>
+                                <select id="rep-filtro-estado" onchange="cargarReportesAdmin()">
+                                    <option value="todos">Todos los estados</option>
+                                    <option value="activa">Activa</option>
+                                    <option value="finalizada">Finalizada</option>
+                                    <option value="cancelada">Cancelada</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Buscar</label>
+                            <div class="custom-input">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="rep-filtro-buscar" placeholder="Cliente o cancha..." onkeyup="filtrarReportesEnVivo()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenedor del Reporte (para vista y render de PDF) -->
+                <div class="table-container" id="area-imprimible-reporte">
+                    <!-- Encabezado que se ve bien en pantalla y en PDF -->
+                    <div id="encabezado-pdf-oficial" style="display:none; padding: 25px 25px 15px; border-bottom: 2px solid var(--primary);">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <h2 style="margin:0; font-size:1.5em; font-weight:800; color:var(--primary);"><i class="fas fa-futbol"></i> FITCANCHAS - SISTEMA DE GESTIÓN</h2>
+                                <p style="margin:4px 0 0; font-size:0.9em; color:var(--text-muted);">Reporte Oficial Consolidado de Alquiler de Canchas</p>
+                            </div>
+                            <div style="text-align:right; font-size:0.8em; color:var(--text-muted);">
+                                <p style="margin:0;" id="pdf-fecha-generacion">Fecha: --/--/----</p>
+                                <p style="margin:2px 0 0;" id="pdf-generado-por">Generado por: Administrador</p>
+                            </div>
+                        </div>
+                        <div style="margin-top:15px; display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; background:var(--bg-app); padding:10px 15px; border-radius:8px;">
+                            <div><span style="font-size:0.75em; color:var(--text-muted); display:block;">Total Reservas</span><strong id="pdf-stat-reservas" style="font-size:1.1em;">0</strong></div>
+                            <div><span style="font-size:0.75em; color:var(--text-muted); display:block;">Horas Totales</span><strong id="pdf-stat-horas" style="font-size:1.1em;">0h</strong></div>
+                            <div><span style="font-size:0.75em; color:var(--text-muted); display:block;">Total Recaudado</span><strong id="pdf-stat-ingresos" style="font-size:1.1em; color:var(--primary);">$0</strong></div>
+                            <div><span style="font-size:0.75em; color:var(--text-muted); display:block;">Clientes Únicos</span><strong id="pdf-stat-clientes" style="font-size:1.1em;">0</strong></div>
+                        </div>
+                    </div>
+
+                    <div class="table-header">
+                        <h4 style="font-weight:700;"><i class="fas fa-list-alt" style="margin-right:8px; color:var(--accent);"></i>Detalle de Alquileres Registrados</h4>
+                        <span id="rep-contador-registros" style="font-size: 0.85em; color: var(--text-muted);">Cargando registros...</span>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <table id="tabla-reporte-alquileres">
+                            <thead>
+                                <tr>
+                                    <th>#ID</th>
+                                    <th>Cliente</th>
+                                    <th>Cancha</th>
+                                    <th>Fecha y Hora</th>
+                                    <th>Horas</th>
+                                    <th>Implementos</th>
+                                    <th>Monto</th>
+                                    <th>Pago</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-reportes-body">
                                 <!-- JS rellena -->
                             </tbody>
                         </table>
