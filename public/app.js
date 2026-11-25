@@ -1456,11 +1456,78 @@ async function cargarReportesAdmin() {
         document.getElementById('rep-total-ingresos').innerText = formatearDinero(reporteResumenActual.total_ingresos || 0);
         document.getElementById('rep-total-clientes').innerText = reporteResumenActual.clientes_unicos || 0;
 
+        // Renderizar Top Canchas Más Usadas
+        renderTopCanchasReporte(reporteResumenActual.ranking_canchas || []);
+
+        // Renderizar Implementos y Bajas / Dañados
+        renderImplementosDanadosReporte(reporteResumenActual.implementos_estado || []);
+
         renderTablaReportes(reportesDataActual);
     } catch (e) {
         console.error("Error al cargar reportes:", e);
         showToast("Error al cargar los reportes", "error");
     }
+}
+
+function renderTopCanchasReporte(ranking) {
+    const cont = document.getElementById('rep-top-canchas-lista');
+    if (!cont) return;
+
+    if (!ranking || ranking.length === 0) {
+        cont.innerHTML = '<p style="font-size:0.85em; color:var(--text-muted); text-align:center; padding:15px 0;">No hay datos de uso en el período.</p>';
+        return;
+    }
+
+    const maxHoras = Math.max(...ranking.map(r => r.horas), 1);
+
+    cont.innerHTML = ranking.map((r, i) => {
+        const pct = Math.round((r.horas / maxHoras) * 100);
+        const medallas = ['🥇', '🥈', '🥉', '4°', '5°'];
+        return `
+            <div style="background:var(--bg-app); padding:8px 12px; border-radius:6px; border:1px solid var(--border);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; font-size:0.85em;">
+                    <strong style="color:var(--text-main);">${medallas[i] || '•'} ${r.cancha}</strong>
+                    <span style="font-weight:700; color:var(--accent);">${r.horas} horas</span>
+                </div>
+                <div style="width:100%; background:rgba(0,0,0,0.1); border-radius:3px; height:5px; overflow:hidden;">
+                    <div style="width:${pct}%; height:100%; background:var(--primary); border-radius:3px;"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderImplementosDanadosReporte(implementos) {
+    const cont = document.getElementById('rep-danados-lista');
+    if (!cont) return;
+
+    if (!implementos || implementos.length === 0) {
+        cont.innerHTML = '<p style="font-size:0.85em; color:var(--text-muted); text-align:center; padding:15px 0;">Inventario en óptimo estado sin bajas registradas.</p>';
+        return;
+    }
+
+    cont.innerHTML = implementos.map(imp => {
+        const danados = imp.cantidad_danados || 0;
+        const total = imp.cantidad_total || 0;
+        const nombre = `${imp.articulo}${imp.color ? ' (' + imp.color + ')' : ''}`;
+        const pctDanados = total > 0 ? Math.round((danados / total) * 100) : 0;
+        const colorAlerta = danados > 0 ? 'var(--danger)' : 'var(--success)';
+
+        return `
+            <div style="background:var(--bg-app); padding:8px 12px; border-radius:6px; border:1px solid var(--border);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; font-size:0.85em;">
+                    <span style="font-weight:600; color:var(--text-main);">${nombre}</span>
+                    <span style="font-size:0.8em; color:${colorAlerta}; font-weight:700;">
+                        ${danados > 0 ? `<i class="fas fa-exclamation-triangle"></i> ${danados} dañados (${pctDanados}%)` : '<i class="fas fa-check-circle"></i> 0 dañados'}
+                    </span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.75em; color:var(--text-muted);">
+                    <span>Stock total: ${total}</span>
+                    <span>Operativos: ${total - danados}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 function renderTablaReportes(alquileres) {
@@ -1569,11 +1636,28 @@ async function generarReportePDF() {
     if (document.getElementById('pdf-stat-ingresos')) document.getElementById('pdf-stat-ingresos').innerText = formatearDinero(reporteResumenActual?.total_ingresos || 0);
     if (document.getElementById('pdf-stat-clientes')) document.getElementById('pdf-stat-clientes').innerText = reporteResumenActual?.clientes_unicos || 0;
 
+    // Resumen Top Canchas y Dañados para el PDF
+    if (document.getElementById('pdf-mini-top-canchas')) {
+        const top = reporteResumenActual?.ranking_canchas || [];
+        document.getElementById('pdf-mini-top-canchas').innerHTML = top.length > 0 
+            ? top.slice(0, 3).map(c => `• <strong>${c.cancha}</strong> (${c.horas}h)`).join(' &nbsp;|&nbsp; ')
+            : 'Sin registros de uso';
+    }
+    if (document.getElementById('pdf-mini-danados')) {
+        const dan = (reporteResumenActual?.implementos_estado || []).filter(i => (i.cantidad_danados || 0) > 0);
+        document.getElementById('pdf-mini-danados').innerHTML = dan.length > 0
+            ? dan.map(i => `• <strong>${i.articulo}${i.color ? ' ' + i.color : ''}</strong>: ${i.cantidad_danados} dañados`).join(' &nbsp;|&nbsp; ')
+            : 'Todos los implementos en óptimo estado (0 dañados)';
+    }
+
+    // Agregar clase temporal para contraste nítido en el render de PDF
+    areaImprimible.classList.add('modo-exportacion-pdf');
+
     // Mostrar temporalmente el encabezado para html2pdf
     if (encabezadoOficial) encabezadoOficial.style.display = 'block';
 
     const opt = {
-        margin: [10, 10, 12, 10],
+        margin: [8, 8, 10, 8],
         filename: `Reporte_Alquiler_FitCanchas_${new Date().toISOString().split('T')[0]}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, letterRendering: true },
@@ -1589,7 +1673,7 @@ async function generarReportePDF() {
         console.error("Error al exportar PDF:", error);
         showToast("Error al generar el archivo PDF.", "error");
     } finally {
-        // Ocultar encabezado nuevamente de la vista normal
+        areaImprimible.classList.remove('modo-exportacion-pdf');
         if (encabezadoOficial) encabezadoOficial.style.display = 'none';
     }
 }

@@ -633,6 +633,60 @@ canvas#confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 
     transition: background-color 0.2s;
 }
 
+/* Modo de alta definición y contraste forzado al generar el PDF */
+.modo-exportacion-pdf {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.modo-exportacion-pdf th {
+    background: #0a4d2e !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+.modo-exportacion-pdf tr {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+}
+
+.modo-exportacion-pdf tr:nth-child(even) {
+    background: #f8fafc !important;
+}
+
+.modo-exportacion-pdf td {
+    color: #0f172a !important;
+}
+
+.modo-exportacion-pdf .monto-cell {
+    color: #0a4d2e !important;
+}
+
+.modo-exportacion-pdf #encabezado-pdf-oficial {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+
+.modo-exportacion-pdf #encabezado-pdf-oficial div {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+.modo-exportacion-pdf #encabezado-pdf-oficial strong {
+    color: #0f172a !important;
+}
+
+.modo-exportacion-pdf #encabezado-pdf-oficial h2 {
+    color: #0a4d2e !important;
+}
+
+.modo-exportacion-pdf span, .modo-exportacion-pdf p {
+    color: #334155 !important;
+}
+
 @media print {
     body {
         background: #ffffff !important;

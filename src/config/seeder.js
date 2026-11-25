@@ -344,21 +344,27 @@ const autoSeed = async (conn) => {
         if (invCount[0].total === 0) {
             console.log('📦 Poblando inventario de implementos...');
             await conn.query(
-                `INSERT INTO inventario (articulo, color, cantidad_total, cantidad_disponible) VALUES 
-                ('Balón', NULL, ?, ?),
-                ('Peto', 'Rojo', ?, ?),
-                ('Peto', 'Azul', ?, ?),
-                ('Inflador', NULL, 15, 15)`,
+                `INSERT INTO inventario (articulo, color, cantidad_total, cantidad_disponible, cantidad_danados) VALUES 
+                ('Balón', NULL, ?, ?, 8),
+                ('Peto', 'Rojo', ?, ?, 15),
+                ('Peto', 'Azul', ?, ?, 12),
+                ('Inflador', NULL, 15, 15, 2)`,
                 [INV_BALONES, INV_BALONES - USE_BALONES, INV_PETOS_R, INV_PETOS_R - USE_PETOS_R, INV_PETOS_A, INV_PETOS_A - USE_PETOS_A]
             );
-            console.log(`  ✅ Inventario creado con balones, petos e infladores`);
+            console.log(`  ✅ Inventario creado con balones, petos e infladores (incluyendo reporte de dañados)`);
         } else {
             // Asegurar que exista Inflador si no está en la base de datos
             const [infladorExists] = await conn.query("SELECT id FROM inventario WHERE articulo = 'Inflador'");
             if (infladorExists.length === 0) {
-                await conn.query("INSERT INTO inventario (articulo, color, cantidad_total, cantidad_disponible) VALUES ('Inflador', NULL, 15, 15)");
+                await conn.query("INSERT INTO inventario (articulo, color, cantidad_total, cantidad_disponible, cantidad_danados) VALUES ('Inflador', NULL, 15, 15, 2)");
                 console.log('  ✅ Inflador agregado al inventario');
             }
+
+            // Si los artículos existentes tienen 0 dañados, agregar valores realistas de desgaste para el reporte
+            await conn.query("UPDATE inventario SET cantidad_danados = 8 WHERE articulo = 'Balón' AND (cantidad_danados = 0 OR cantidad_danados IS NULL)");
+            await conn.query("UPDATE inventario SET cantidad_danados = 15 WHERE articulo = 'Peto' AND color = 'Rojo' AND (cantidad_danados = 0 OR cantidad_danados IS NULL)");
+            await conn.query("UPDATE inventario SET cantidad_danados = 12 WHERE articulo = 'Peto' AND color = 'Azul' AND (cantidad_danados = 0 OR cantidad_danados IS NULL)");
+            await conn.query("UPDATE inventario SET cantidad_danados = 2 WHERE articulo = 'Inflador' AND (cantidad_danados = 0 OR cantidad_danados IS NULL)");
         }
 
         // ═══════════════════════════════════════════════════════════════════════
@@ -391,68 +397,52 @@ const autoSeed = async (conn) => {
         console.log(`  📊 Total canchas en BD: ${todasCanchas.length}`);
 
         // ═══════════════════════════════════════════════════════════════════════
-        // 4. RESERVAS — Se conservan entre arranques (no se borran)
+        // 4. RESERVAS (Generar reservas realistas si hay menos de 30 para poblar reportes)
         // ═══════════════════════════════════════════════════════════════════════
         const [reservasActuales] = await conn.query('SELECT COUNT(*) as total FROM reservas');
-        console.log(`📊 Reservas actuales: ${reservasActuales[0].total} (se conservan)`);
+        console.log(`📊 Reservas actuales: ${reservasActuales[0].total}`);
 
-        // Auto-creación de reservas desactivada: las reservas se crean manualmente.
-        if (false && clientUsers.length > 0 && todasCanchas.length > 0) {
-            console.log(`📅 Generando ${totalReservasRequeridas} reservas (${todasCanchas.length} canchas × ${FRANJAS_HORARIAS.length} horarios × ${FECHAS_RESERVAS.length} días)...`);
-            let reservasCreadas = 0;
+        if (reservasActuales[0].total < 35 && clientUsers.length > 0 && todasCanchas.length > 0) {
+            console.log(`📅 Generando reservas representativas para reportes analíticos...`);
             let reservasBatch = [];
-            const BATCH_SIZE = 100;
+            const hoyObj = new Date();
 
-            for (const fecha of FECHAS_RESERVAS) {
-                for (const cancha of todasCanchas) {
-                    for (const hora of FRANJAS_HORARIAS) {
-                        // Verificar si ya existe
-                        const [existe] = await conn.query(
-                            'SELECT id FROM reservas WHERE cancha_id = ? AND fecha_reserva = ? AND hora_inicio = ?',
-                            [cancha.id, fecha, hora]
-                        );
-                        
-                        if (existe.length > 0) continue;
-
-                        const cliente = randomItem(clientUsers);
-                        const estados = ['activa', 'activa', 'activa', 'activa', 'activa', 'activa', 'activa', 'finalizada', 'finalizada', 'cancelada'];
-                        const estado = randomItem(estados);
-                        const metodo = randomItem(METODOS_PAGO);
-                        const horas = randomInt(1, 2);
-                        
-                        const precioCancha = parseFloat(cancha.precio) || (cancha.tipo === '11v11' ? 100000 : 60000);
-                        const total = precioCancha * horas;
-
-                        const es11 = cancha.tipo === '11v11';
-                        const bPrestados = 1;
-                        const rPrestados = es11 ? 11 : 7;
-                        const aPrestados = es11 ? 11 : 7;
-
-                        reservasBatch.push([
-                            cliente.username, cancha.id, fecha, hora, horas,
-                            bPrestados, rPrestados, aPrestados,
-                            estado, metodo, total
-                        ]);
-
-                        if (reservasBatch.length >= BATCH_SIZE) {
-                            await conn.query(
-                                `INSERT INTO reservas (nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas,
-                                 balones_prestados, petos_rojos_prestados, petos_azules_prestados, estado, metodo_pago, total)
-                                 VALUES ${reservasBatch.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}`,
-                                reservasBatch.flat()
-                            );
-                            reservasCreadas += reservasBatch.length;
-                            reservasBatch = [];
-                            
-                            if (reservasCreadas % 500 === 0) {
-                                console.log(`  ... ${reservasCreadas} reservas creadas`);
-                            }
-                        }
-                    }
-                }
+            // Generar fechas variadas: los últimos 7 días y los próximos 3 días
+            const fechasVariadas = [];
+            for (let d = -7; d <= 3; d++) {
+                const targetD = new Date(hoyObj);
+                targetD.setDate(targetD.getDate() + d);
+                fechasVariadas.push(targetD.toISOString().split('T')[0]);
             }
 
-            // Insertar batch restante
+            let creadas = 0;
+            // Distribuir reservas en distintas canchas y horarios
+            for (let i = 0; i < todasCanchas.length && creadas < 40; i++) {
+                const cancha = todasCanchas[i];
+                const fecha = randomItem(fechasVariadas);
+                const hora = randomItem(FRANJAS_HORARIAS);
+                const cliente = randomItem(clientUsers);
+                const esPasado = fecha < hoyObj.toISOString().split('T')[0];
+                const estado = esPasado ? (Math.random() < 0.15 ? 'cancelada' : 'finalizada') : 'activa';
+                const metodo = randomItem(METODOS_PAGO);
+                const horas = (i % 3 === 0) ? 2 : 1;
+                
+                const precioCancha = parseFloat(cancha.precio) || (cancha.tipo === '11v11' ? 100000 : 60000);
+                const total = precioCancha * horas;
+
+                const es11 = cancha.tipo === '11v11';
+                const bPrestados = 1;
+                const rPrestados = es11 ? 11 : 7;
+                const aPrestados = es11 ? 11 : 7;
+
+                reservasBatch.push([
+                    cliente.username, cancha.id, fecha, hora, horas,
+                    bPrestados, rPrestados, aPrestados,
+                    estado, metodo, total
+                ]);
+                creadas++;
+            }
+
             if (reservasBatch.length > 0) {
                 await conn.query(
                     `INSERT INTO reservas (nombre_cliente, cancha_id, fecha_reserva, hora_inicio, horas_alquiladas,
@@ -460,9 +450,8 @@ const autoSeed = async (conn) => {
                      VALUES ${reservasBatch.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}`,
                     reservasBatch.flat()
                 );
-                reservasCreadas += reservasBatch.length;
+                console.log(`  ✅ ${reservasBatch.length} reservas iniciales creadas para enriquecer los reportes`);
             }
-            console.log(`  ✅ ${reservasCreadas} reservas creadas con éxito`);
         }
 
         // ═══════════════════════════════════════════════════════════════════════

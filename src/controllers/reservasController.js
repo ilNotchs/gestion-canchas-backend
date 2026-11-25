@@ -370,6 +370,25 @@ const obtenerReporteAlquileres = async (req, res) => {
             };
         });
 
+        // Obtener estado del inventario e implementos dañados
+        const [danadosRows] = await db.query(`
+            SELECT articulo, color, cantidad_total, cantidad_disponible, COALESCE(cantidad_danados, 0) as cantidad_danados 
+            FROM inventario
+            ORDER BY id ASC
+        `);
+
+        // Obtener compras/ventas consolidadas para el reporte financiero general
+        const [ventasReporte] = await db.query(`
+            SELECT COUNT(*) as total_pedidos, COALESCE(SUM(total), 0) as total_ventas_tienda
+            FROM pedidos WHERE estado = 'completado'
+        `);
+
+        // Ranking de canchas más usadas
+        const rankingCanchas = Object.entries(canchasUso)
+            .map(([cancha, horas]) => ({ cancha, horas }))
+            .sort((a, b) => b.horas - a.horas)
+            .slice(0, 5);
+
         res.json({
             resumen: {
                 total_alquileres: registros.length,
@@ -378,7 +397,10 @@ const obtenerReporteAlquileres = async (req, res) => {
                 clientes_unicos: clientesSet.size,
                 total_balones: totalBalones,
                 total_petos: totalPetos,
-                canchas_uso: canchasUso
+                ranking_canchas: rankingCanchas,
+                implementos_estado: danadosRows,
+                ventas_tienda: ventasReporte[0]?.total_ventas_tienda || 0,
+                total_pedidos_tienda: ventasReporte[0]?.total_pedidos || 0
             },
             alquileres: registros
         });

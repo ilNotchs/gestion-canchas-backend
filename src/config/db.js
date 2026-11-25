@@ -149,9 +149,18 @@ const initializeDatabase = async () => {
                 articulo VARCHAR(100) NOT NULL,
                 color VARCHAR(50) DEFAULT NULL,
                 cantidad_total INT NOT NULL DEFAULT 0,
-                cantidad_disponible INT NOT NULL DEFAULT 0
+                cantidad_disponible INT NOT NULL DEFAULT 0,
+                cantidad_danados INT NOT NULL DEFAULT 0
             )
         `);
+
+        // Asegurar columna cantidad_danados en inventario si la tabla ya existía
+        const [invCols] = await promisePool.query(`SHOW COLUMNS FROM inventario`);
+        const invColNames = invCols.map(c => c.Field);
+        if (!invColNames.includes('cantidad_danados')) {
+            await promisePool.query('ALTER TABLE inventario ADD COLUMN cantidad_danados INT NOT NULL DEFAULT 0');
+            console.log('  ✅ Columna cantidad_danados agregada a inventario');
+        }
 
         // Asegurar columnas de reservas si la tabla ya existía con esquema anterior
         const [reservasCols] = await promisePool.query(`SHOW COLUMNS FROM reservas`);
